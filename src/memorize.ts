@@ -30,7 +30,20 @@ export const memorize = async <ReturnedData = any>(
 
   const { results: snap } = snapshots[snapshotName] || ({} as Snapshot);
 
-  if (snap && !shouldUpdateSnapshot() && !runInOnlineMode()) {
+  if (!snap) {
+    throw new Error(
+      `Missing snaport
+    - Method snapshot name: ${snapshotName}
+    - Test file: ${callingFile}
+
+    Please re-run Jest with the --updateSnapshot flag AND the env var SLAPSHOT_ONLINE=true.`.replace(
+        new RegExp("        ", "g"),
+        ""
+      )
+    );
+  }
+
+  if (!runInOnlineMode()) {
     return Promise.resolve(safeSnapshot(snap, false));
   }
 
@@ -57,7 +70,7 @@ export const memorize = async <ReturnedData = any>(
         - Method snapshot name: ${snapshotName}
         - Test file: ${callingFile}
 
-        Please re-run Jest with the --updateSnapshot flag.`.replace(
+        Please re-run Jest with the --updateSnapshot flag AND the env var SLAPSHOT_ONLINE=true.`.replace(
           new RegExp("        ", "g"),
           ""
         )
