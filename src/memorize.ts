@@ -30,7 +30,7 @@ export const memorize = async <ReturnedData = any>(
 
   const { results: snap } = snapshots[snapshotName] || ({} as Snapshot);
 
-  if (!snap) {
+  if (!shouldUpdateSnapshot() && !runInOnlineMode() && !snap) {
     throw new Error(
       `Missing snaport
     - Method snapshot name: ${snapshotName}
