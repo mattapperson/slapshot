@@ -64,7 +64,7 @@ export const memorize = async <ReturnedData = any>(
       methodResultsToCompare = JSON.stringify(methodResultsToCompare);
     }
 
-    if (methodResultsToCompare !== snapDataToCompare) {
+    if (snap && methodResultsToCompare !== snapDataToCompare) {
       console.log(
         `[Warning] Intigration test result does not match the memorized snap file:
         - Method snapshot name: ${snapshotName}

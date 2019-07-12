@@ -26,6 +26,10 @@ let mockPromise: any;
 let mockThunk: any;
 
 beforeEach(() => {
+  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.argv = process.argv.filter(e => e !== "-u");
+  process.env.SLAPSHOT_ONLINE = undefined;
+
   mockPromise = jest.fn(fetchData);
   mockThunk = jest.fn(mockPromise);
   rimraf.sync(snapshotDir);
@@ -42,6 +46,9 @@ test("calls thunk on first run", async () => {
 
 test("writes a __data_snapshot__ file to disk", async () => {
   expect(fs.existsSync(snapshotDir)).toBe(false);
+  process.argv.push("--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "true";
+
   await memorize("b", mockThunk);
   expect(fs.existsSync(snapshotDir)).toBe(true);
 });
