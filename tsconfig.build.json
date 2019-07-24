@@ -13,7 +13,7 @@
     "target": "ES2015",
     // Use commonjs for node, overridden in webpack to keep import statements
     // to maintain support for things like `await import()`
-    "module": "amd",
+    "module": "commonjs",
     // Allows default imports from modules with no default export. This does not affect code emit, just type checking.
     // We have to enable this option explicitly since `esModuleInterop` doesn't enable it automatically when ES2015 or
     // ESNext module format is used.
@@ -33,7 +33,8 @@
     "importHelpers": true,
     // adding global typings
     "types": ["jest", "node"],
-    "outFile": "lib/index.js"
+    "declaration": true,
+    "outDir": "lib"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules/**/*", "src/**/*.test.ts"]

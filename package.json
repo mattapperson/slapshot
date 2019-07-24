@@ -1,6 +1,6 @@
 {
   "name": "@mattapperson/slapshot",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "main": "lib/index.js",
   "description": "Mock method calls with snapshots, run your intigation tests online or offline!",
   "license": "MIT",
