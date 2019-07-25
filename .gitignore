@@ -2,3 +2,4 @@
 /node_modules
 /src/__memorize_snapshots__
 /yarn-error.log
+/lib
