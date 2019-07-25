@@ -10,9 +10,30 @@ export const memorize = async <ReturnedData = any>(
   snapshotName: string,
   method: () => Promise<ReturnedData> | ReturnedData
 ): Promise<ReturnedData> => {
-  const callStack = (new Error().stack || "").split("\n")[1].split(/\s/);
-  const stackLine = callStack[callStack.length - 1].replace(/[()]/, "");
-  const callingFile = stackLine.substring(stackLine.indexOf(":"), -1);
+  const callStackLines = (new Error().stack || "").split("\n");
+  const mappedLines: string[] = callStackLines
+    .map(function(line) {
+      if (line.match(/^\s*[-]{4,}$/)) {
+        return line;
+      }
+
+      var lineMatch = line.match(
+        /at (?:(.+)\s+\()?(?:(.+?):(\d+)(?::(\d+))?|([^)]+))\)?/
+      );
+      if (!lineMatch) {
+        return;
+      }
+      return lineMatch[2] || null;
+    })
+    .filter(function(line) {
+      return (
+        !!line &&
+        !line.includes("node_modules") &&
+        !line.includes("/lib/memorize.js")
+      );
+    }) as string[];
+
+  const callingFile = mappedLines[0];
 
   const basename = `${path.basename(callingFile)}.snap`;
   const snapFile = path.resolve(
