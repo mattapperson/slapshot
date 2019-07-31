@@ -63,14 +63,14 @@ await callWhenOnline(async () => {
 });
 
 /**
- * Method 2: memorized
+ * Method 2: memorize
  *
  * if CLI flag `--updateSnapshot` or the env var `SLAPSHOT_ONLINE=true` is set to record, this returns the live server results
  * if not, it returns a snapshotted version. When live, the above callWhenOnline would have
  * started the server it would connect to making the process seamless
  **/
 test("get user by ID", async () => {
-  const results = await memorized("get foo user", async () => getUser("foo"));
+  const results = await memorize("get foo user", async () => getUser("foo"));
   expect(results.fullName).toBe("Matt Apperson");
 });
 
