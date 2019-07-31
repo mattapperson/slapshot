@@ -6,38 +6,30 @@ import { safeSnapshot } from "./safeSnapshot";
 import { loadSnaps } from "./loadSnaps";
 import { mkdir } from "./mkdir";
 
-export const memorize = async <ReturnedData = any>(
+const testMap: any = {};
+
+export async function memorize<ReturnedData = any>(
   snapshotName: string,
-  method: () => Promise<ReturnedData> | ReturnedData
-): Promise<ReturnedData> => {
-  const callStackLines = (new Error().stack || "").split("\n");
-  const mappedLines: string[] = callStackLines
-    .map(function(line) {
-      if (line.match(/^\s*[-]{4,}$/)) {
-        return line;
-      }
+  method: () => Promise<ReturnedData> | ReturnedData,
+  { notPure = false }: { notPure?: boolean } = {}
+): Promise<ReturnedData> {
+  let jestContext: any;
+  // Hack to get access to jest current test context
+  // @ts-ignore
+  expect().__slapshot__hack__context(context => (jestContext = context));
 
-      var lineMatch = line.match(
-        /at (?:(.+)\s+\()?(?:(.+?):(\d+)(?::(\d+))?|([^)]+))\)?/
-      );
-      if (!lineMatch) {
-        return;
-      }
-      return lineMatch[2] || null;
-    })
-    .filter(function(line) {
-      return (
-        !!line &&
-        !line.includes("node_modules") &&
-        !line.includes("/lib/memorize.js")
-      );
-    }) as string[];
+  let fullSnapshotName = `${jestContext.currentTestName} - ${snapshotName}`;
 
-  const callingFile = mappedLines[0];
+  if (notPure) {
+    if (!testMap[fullSnapshotName]) testMap[fullSnapshotName] = 0;
+    testMap[fullSnapshotName] += 1;
 
-  const basename = `${path.basename(callingFile)}.snap`;
+    fullSnapshotName = `${fullSnapshotName} (${testMap[fullSnapshotName]})`;
+  }
+
+  const basename = `${path.basename(jestContext.testPath)}.snap`;
   const snapFile = path.resolve(
-    callingFile,
+    jestContext.testPath,
     "..",
     "__memorize_snapshots__",
     basename
@@ -49,13 +41,13 @@ export const memorize = async <ReturnedData = any>(
     snapshots = loadSnaps(snapFile);
   }
 
-  const { results: snap } = snapshots[snapshotName] || ({} as Snapshot);
+  const { results: snap } = snapshots[fullSnapshotName] || ({} as Snapshot);
 
   if (!shouldUpdateSnapshot() && !runInOnlineMode() && !snap) {
     throw new Error(
       `Missing snaport
-    - Method snapshot name: ${snapshotName}
-    - Test file: ${callingFile}
+    - Method snapshot name: ${fullSnapshotName}
+    - Test file: ${jestContext.testPath}
 
     Please re-run Jest with the --updateSnapshot flag AND the env var SLAPSHOT_ONLINE=true.`.replace(
         new RegExp("        ", "g"),
@@ -86,10 +78,10 @@ export const memorize = async <ReturnedData = any>(
     }
 
     if (snap && methodResultsToCompare !== snapDataToCompare) {
-      console.log(
+      throw new Error(
         `[Warning] Intigration test result does not match the memorized snap file:
-        - Method snapshot name: ${snapshotName}
-        - Test file: ${callingFile}
+        - Method snapshot name: ${fullSnapshotName}
+        - Test file: ${jestContext.testPath}
 
         Please re-run Jest with the --updateSnapshot flag AND the env var SLAPSHOT_ONLINE=true.`.replace(
           new RegExp("        ", "g"),
@@ -101,7 +93,7 @@ export const memorize = async <ReturnedData = any>(
     return Promise.resolve(methodResults);
   }
 
-  snapshots[snapshotName] = {
+  snapshots[fullSnapshotName] = {
     results: safeSnapshot(methodResults)
   };
 
@@ -117,4 +109,4 @@ export const memorize = async <ReturnedData = any>(
   mkdir(snapFile);
   fs.writeFileSync(snapFile, newSnap);
   return methodResults;
-};
+}

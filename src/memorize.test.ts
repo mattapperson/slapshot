@@ -3,6 +3,7 @@ import rimraf from "rimraf";
 import { memorize } from "./memorize";
 import fs from "fs";
 import { performance } from "perf_hooks";
+import "./hack_context";
 
 const snapshotDir = `${__dirname}/__memorize_snapshots__`;
 
@@ -83,10 +84,12 @@ test("calls run but dont update with SLAPSHOT_ONLINE", async () => {
 
   process.argv = process.argv.filter(e => e !== "--updateSnapshot");
   process.env.SLAPSHOT_ONLINE = "true";
-  const data: any = await memorize("d", () => mockWithValue({ foo: "foo" }));
-  expect(mockWithValue.mock.calls.length).toBe(2);
-  expect(mockWithValue.mock.calls.length).toBe(2);
-  expect(data.foo).toBe("foo");
+  expect(() => {
+    const data: any = memorize("d", () => mockWithValue({ foo: "foo" }));
+    expect(mockWithValue.mock.calls.length).toBe(2);
+    expect(mockWithValue.mock.calls.length).toBe(2);
+    expect(data.foo).toBe("foo");
+  }).toThrow();
 
   process.argv = process.argv.filter(e => e !== "--updateSnapshot");
   process.env.SLAPSHOT_ONLINE = "false";
@@ -160,4 +163,25 @@ test("nested APIs with functions throw an error when called unless mocked manual
   expect(() => {
     data.method();
   }).toThrow();
+});
+
+test("Impure memorized methods also add call count to name", async () => {
+  const result1 = await memorize(
+    "complex",
+    () => {
+      return 22;
+    },
+    { notPure: true }
+  );
+
+  const result2 = await memorize(
+    "complex",
+    () => {
+      return 21;
+    },
+    { notPure: true }
+  );
+
+  expect(result1).toBe(22);
+  expect(result2).toBe(21);
 });
