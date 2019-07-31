@@ -863,9 +863,9 @@ caller-callsite@^2.0.0:
     callsites "^2.0.0"
 
 caller-callsite@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/caller-callsite/-/caller-callsite-4.0.0.tgz#5e0a91e685a450fb311488dfee6a7f754ac1e8ed"
-  integrity sha512-ZASXM0oX5XUaYErf39VMD2vxy49k2OR5YxMnqiLicyw6Rr3FeL8zzjBdqT5GlxRNwOcLDNVZ6+VbVeG1Ekx88Q==
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/caller-callsite/-/caller-callsite-4.1.0.tgz#3e33cb1d910e7b09332d59a3503b9af7462f7295"
+  integrity sha512-99nnnGlJexTc41xwQTr+mWl15OI5PPczUJzM4YRE7QjkefMKCXGa5gfQjCOuVrD+1TjI/fevIDHg2nz3iYN5Ig==
   dependencies:
     callsites "^3.1.0"
 
