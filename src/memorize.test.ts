@@ -169,7 +169,7 @@ test("Impure memorized methods also add call count to name", async () => {
     () => {
       return 22;
     },
-    { notPure: true }
+    { pure: false }
   );
 
   const result2 = await memorize(
@@ -177,7 +177,7 @@ test("Impure memorized methods also add call count to name", async () => {
     () => {
       return 21;
     },
-    { notPure: true }
+    { pure: false }
   );
 
   expect(result1).toBe(22);

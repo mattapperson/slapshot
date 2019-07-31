@@ -11,7 +11,7 @@ const testMap: any = {};
 export function memorize<ReturnedData = any>(
   snapshotName: string,
   method: () => Promise<ReturnedData> | ReturnedData,
-  { notPure = false }: { notPure?: boolean } = {}
+  { pure = true }: { pure?: boolean } = {}
 ): Promise<ReturnedData> | ReturnedData {
   let jestContext: any;
   // Hack to get access to jest current test context
@@ -20,11 +20,14 @@ export function memorize<ReturnedData = any>(
 
   let fullSnapshotName = `${jestContext.currentTestName} - ${snapshotName}`;
 
-  if (notPure) {
-    if (!testMap[fullSnapshotName]) testMap[fullSnapshotName] = 0;
-    testMap[fullSnapshotName] += 1;
+  if (!pure) {
+    if (!testMap[jestContext.currentTestName])
+      testMap[jestContext.currentTestName] = 0;
+    testMap[jestContext.currentTestName] += 1;
 
-    fullSnapshotName = `${fullSnapshotName} (${testMap[fullSnapshotName]})`;
+    fullSnapshotName = `${fullSnapshotName} (${
+      testMap[jestContext.currentTestName]
+    })`;
   }
 
   const basename = `${path.basename(jestContext.testPath)}.snap`;
