@@ -138,13 +138,11 @@ test("works with strings and numbers", async () => {
   process.argv.push("--updateSnapshot");
   process.env.SLAPSHOT_ONLINE = "true";
 
-  await memorize("c", () => {
-    return 22;
-  });
+  memorize("c", () => 22);
 
   process.argv = process.argv.filter(e => e !== "--updateSnapshot");
   process.env.SLAPSHOT_ONLINE = "false";
-  const data = await memorize("c", () => {});
+  const data = memorize("c", () => {});
   expect(data).toBe(22);
 });
 

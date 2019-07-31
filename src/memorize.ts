@@ -8,11 +8,11 @@ import { mkdir } from "./mkdir";
 
 const testMap: any = {};
 
-export async function memorize<ReturnedData = any>(
+export function memorize<ReturnedData = any>(
   snapshotName: string,
   method: () => Promise<ReturnedData> | ReturnedData,
   { notPure = false }: { notPure?: boolean } = {}
-): Promise<ReturnedData> {
+): Promise<ReturnedData> | ReturnedData {
   let jestContext: any;
   // Hack to get access to jest current test context
   // @ts-ignore
@@ -42,7 +42,6 @@ export async function memorize<ReturnedData = any>(
   }
 
   const { results: snap } = snapshots[fullSnapshotName] || ({} as Snapshot);
-
   if (!shouldUpdateSnapshot() && !runInOnlineMode() && !snap) {
     throw new Error(
       `Missing snaport
@@ -57,15 +56,42 @@ export async function memorize<ReturnedData = any>(
   }
 
   if (!runInOnlineMode()) {
-    return Promise.resolve(safeSnapshot(snap, false));
+    return safeSnapshot(snap, false);
   }
 
   let methodResults = method();
 
   if (methodResults instanceof Promise) {
-    methodResults = (await methodResults) as ReturnedData;
+    return Promise.resolve(methodResults).then(methodResults => {
+      return resolveData(
+        snapFile,
+        snap,
+        fullSnapshotName,
+        methodResults,
+        jestContext,
+        snapshots
+      );
+    });
   }
 
+  return resolveData(
+    snapFile,
+    snap,
+    fullSnapshotName,
+    methodResults,
+    jestContext,
+    snapshots
+  );
+}
+
+function resolveData(
+  snapFile: string,
+  snap: any,
+  fullSnapshotName: string,
+  methodResults: any,
+  jestContext: any,
+  snapshots: Snapshot
+) {
   if (!shouldUpdateSnapshot() && runInOnlineMode()) {
     let snapDataToCompare = snap;
     if (typeof snapDataToCompare === "object") {
@@ -90,7 +116,7 @@ export async function memorize<ReturnedData = any>(
       );
     }
 
-    return Promise.resolve(methodResults);
+    return methodResults;
   }
 
   snapshots[fullSnapshotName] = {
