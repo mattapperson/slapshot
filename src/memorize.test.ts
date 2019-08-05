@@ -227,31 +227,3 @@ test("thrown errors are replayed", async () => {
 
   expect(mockedCB).not.toBeCalled();
 });
-
-test("thrown errors of a custom type are replayed as the correct instance", async () => {
-  class CustomError extends Error {
-    constructor(message: any) {
-      super(message);
-      this.name = "CustomError";
-    }
-  }
-
-  process.argv.push("--updateSnapshot");
-  process.env.SLAPSHOT_ONLINE = "true";
-
-  const mockedCB = jest.fn();
-  expect(() => {
-    memorize("error", () => {
-      throw new CustomError("foo");
-    });
-  }).toThrowError("foo");
-
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
-  process.env.SLAPSHOT_ONLINE = "false";
-
-  try {
-    memorize("error", mockedCB);
-  } catch (e) {
-    expect(e).toBeInstanceOf(CustomError);
-  }
-});

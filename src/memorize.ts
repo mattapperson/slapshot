@@ -1,18 +1,20 @@
 import path from "path";
 import fs from "fs";
-import { Snapshot } from "./types";
+import { Snapshot, SlapshotDataFormat } from "./types";
 import { runInOnlineMode, shouldUpdateSnapshot } from "./utils";
 import { safeSnapshot } from "./safeSnapshot";
 import { loadSnaps } from "./loadSnaps";
 import { mkdir } from "./mkdir";
-
-type SlapshotDataFormat = { thrownError?: any; results: any };
+// @ts-ignore
+import errorToJSON from "utils-error-to-json";
+// @ts-ignore
+import hydrateError from "utils-error-reviver";
 
 const testMap: any = {};
 
 function returnValues(value: SlapshotDataFormat) {
   if (value.thrownError) {
-    throw value.thrownError;
+    throw JSON.parse(value.thrownError, hydrateError);
   } else {
     return value.results;
   }
@@ -55,7 +57,8 @@ export function memorize<ReturnedData = any>(
     snapshots = loadSnaps(snapFile);
   }
   const snapshot = snapshots[fullSnapshotName];
-  const { results: snap } = snapshot || ({} as Snapshot);
+  const snap = snapshot || ({} as Snapshot);
+
   if (!shouldUpdateSnapshot() && !runInOnlineMode() && !snapshot) {
     throw new Error(
       `Missing snapshot
@@ -71,14 +74,15 @@ export function memorize<ReturnedData = any>(
   }
 
   if (!runInOnlineMode()) {
-    return safeSnapshot(snap, false);
+    snap;
+    return returnValues(safeSnapshot(snap, false));
   }
 
   let methodResults: SlapshotDataFormat = { results: null, thrownError: null };
   try {
     methodResults.results = method();
   } catch (e) {
-    methodResults.thrownError = e;
+    methodResults.thrownError = JSON.stringify(errorToJSON(e));
   }
 
   if (methodResults.results instanceof Promise) {
@@ -89,7 +93,7 @@ export function memorize<ReturnedData = any>(
           snap,
           fullSnapshotName,
           {
-            thrownError: error,
+            thrownError: JSON.stringify(errorToJSON(error)),
             results: null
           },
           jestContext,
@@ -138,12 +142,18 @@ function resolveData(
     if (typeof methodResultsToCompare === "object") {
       methodResultsToCompare = JSON.stringify(methodResultsToCompare);
     }
+    console.log(fullSnapshotName);
 
-    if (snap && methodResultsToCompare !== snapDataToCompare) {
+    if (
+      (snap.results || snap.thrownError) &&
+      methodResultsToCompare !== snapDataToCompare
+    ) {
       throw new Error(
         `[Warning] Intigration test result does not match the memorized snap file:
         - Method snapshot name: ${fullSnapshotName}
         - Test file: ${jestContext.testPath}
+        - Live result: ${methodResultsToCompare}
+        - Existing Snap: ${snapDataToCompare}
 
         ${process.env.SLAPSHOT_RERUN_MESSAGE ||
           "Please re-run Jest with the --updateSnapshot flag AND the env var SLAPSHOT_ONLINE=true"}.`.replace(
