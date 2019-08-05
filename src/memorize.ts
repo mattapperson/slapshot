@@ -43,9 +43,9 @@ export function memorize<ReturnedData = any>(
   if (fs.existsSync(snapFile)) {
     snapshots = loadSnaps(snapFile);
   }
-
-  const { results: snap } = snapshots[fullSnapshotName] || ({} as Snapshot);
-  if (!shouldUpdateSnapshot() && !runInOnlineMode() && !snap) {
+  const snapshot = snapshots[fullSnapshotName];
+  const { results: snap } = snapshot || ({} as Snapshot);
+  if (!shouldUpdateSnapshot() && !runInOnlineMode() && !snapshot) {
     throw new Error(
       `Missing snaport
     - Method snapshot name: ${fullSnapshotName}

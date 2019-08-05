@@ -2,6 +2,9 @@ export function safeSnapshot(obj: any, toSnapshot: boolean = true) {
   if (typeof obj !== "object") {
     return obj;
   }
+  if (obj === null) {
+    return null;
+  }
   return Object.keys(obj).reduce(
     (safeObject, key) => {
       if (
