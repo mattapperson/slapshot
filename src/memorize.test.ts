@@ -146,6 +146,30 @@ test("works with strings and numbers", async () => {
   expect(data).toBe(22);
 });
 
+test("works with null value", async () => {
+  process.argv.push("--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "true";
+
+  memorize("c", () => null);
+
+  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "false";
+  const data = memorize("c", () => {});
+  expect(data).toBe(null);
+});
+
+test("works with undefined value", async () => {
+  process.argv.push("--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "true";
+
+  memorize("c", () => undefined);
+
+  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "false";
+  const data = memorize("c", () => {});
+  expect(data).toBeUndefined();
+});
+
 test("nested APIs with functions throw an error when called unless mocked manualy", async () => {
   process.argv.push("--updateSnapshot");
   process.env.SLAPSHOT_ONLINE = "true";
