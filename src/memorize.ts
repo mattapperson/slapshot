@@ -6,7 +6,17 @@ import { safeSnapshot } from "./safeSnapshot";
 import { loadSnaps } from "./loadSnaps";
 import { mkdir } from "./mkdir";
 
+type SlapshotDataFormat = { thrownError?: any; results: any };
+
 const testMap: any = {};
+
+function returnValues(value: SlapshotDataFormat) {
+  if (value.thrownError) {
+    throw value.thrownError;
+  } else {
+    return value.results;
+  }
+}
 
 export function memorize<ReturnedData = any>(
   snapshotName: string,
@@ -21,8 +31,9 @@ export function memorize<ReturnedData = any>(
   let fullSnapshotName = `${jestContext.currentTestName} - ${snapshotName}`;
 
   if (!pure) {
-    if (!testMap[jestContext.currentTestName])
+    if (!testMap[jestContext.currentTestName]) {
       testMap[jestContext.currentTestName] = 0;
+    }
     testMap[jestContext.currentTestName] += 1;
 
     fullSnapshotName = `${fullSnapshotName} (${
@@ -47,7 +58,7 @@ export function memorize<ReturnedData = any>(
   const { results: snap } = snapshots[fullSnapshotName] || ({} as Snapshot);
   if (!shouldUpdateSnapshot() && !runInOnlineMode() && !snap) {
     throw new Error(
-      `Missing snaport
+      `Missing snapshot
     - Method snapshot name: ${fullSnapshotName}
     - Test file: ${jestContext.testPath}
 
@@ -63,19 +74,40 @@ export function memorize<ReturnedData = any>(
     return safeSnapshot(snap, false);
   }
 
-  let methodResults = method();
+  let methodResults: SlapshotDataFormat = { results: null, thrownError: null };
+  try {
+    methodResults.results = method();
+  } catch (e) {
+    methodResults.thrownError = e;
+  }
 
-  if (methodResults instanceof Promise) {
-    return Promise.resolve(methodResults).then(methodResults => {
-      return resolveData(
-        snapFile,
-        snap,
-        fullSnapshotName,
-        methodResults,
-        jestContext,
-        snapshots
-      );
-    });
+  if (methodResults.results instanceof Promise) {
+    return Promise.resolve(methodResults.results)
+      .catch(error => {
+        return resolveData(
+          snapFile,
+          snap,
+          fullSnapshotName,
+          {
+            thrownError: error,
+            results: null
+          },
+          jestContext,
+          snapshots
+        );
+      })
+      .then(methodResults => {
+        return resolveData(
+          snapFile,
+          snap,
+          fullSnapshotName,
+          {
+            results: methodResults
+          },
+          jestContext,
+          snapshots
+        );
+      });
   }
 
   return resolveData(
@@ -92,7 +124,7 @@ function resolveData(
   snapFile: string,
   snap: any,
   fullSnapshotName: string,
-  methodResults: any,
+  methodResults: SlapshotDataFormat,
   jestContext: any,
   snapshots: Snapshot
 ) {
@@ -121,12 +153,10 @@ function resolveData(
       );
     }
 
-    return methodResults;
+    return returnValues(methodResults);
   }
 
-  snapshots[fullSnapshotName] = {
-    results: safeSnapshot(methodResults)
-  };
+  snapshots[fullSnapshotName] = safeSnapshot(methodResults);
 
   const newSnap = Object.keys(snapshots)
     .sort()
@@ -139,5 +169,5 @@ function resolveData(
 
   mkdir(snapFile);
   fs.writeFileSync(snapFile, newSnap);
-  return methodResults;
+  return returnValues(methodResults);
 }

@@ -65,7 +65,7 @@ test("resolves from disk on 2nd hit", async () => {
   process.argv.push("--updateSnapshot");
   process.env.SLAPSHOT_ONLINE = "false";
   const recordedStart = performance.now();
-  const data = await memorize("c", mockThunk);
+  const data = await memorize("c", jest.fn());
   const recordedEnd = performance.now();
 
   expect(liveEnd - liveStart).toBeGreaterThan(190);
@@ -182,4 +182,52 @@ test("Impure memorized methods also add call count to name", async () => {
 
   expect(result1).toBe(22);
   expect(result2).toBe(21);
+});
+
+test.only("thrown errors are replayed", async () => {
+  process.argv.push("--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "true";
+
+  const mockedCB = jest.fn();
+  expect(() => {
+    memorize("error", () => {
+      throw new Error("foo");
+    });
+  }).toThrowError("foo");
+
+  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "false";
+  expect(() => {
+    memorize("error", mockedCB);
+  }).toThrowError("foo");
+
+  expect(mockedCB).not.toBeCalled();
+});
+
+test("thrown errors of a custom type are replayed as the correct instance", async () => {
+  class CustomError extends Error {
+    constructor(message: any) {
+      super(message);
+      this.name = "CustomError";
+    }
+  }
+
+  process.argv.push("--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "true";
+
+  const mockedCB = jest.fn();
+  expect(() => {
+    memorize("error", () => {
+      throw new CustomError("foo");
+    });
+  }).toThrowError("foo");
+
+  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "false";
+
+  try {
+    memorize("error", mockedCB);
+  } catch (e) {
+    expect(e).toBeInstanceOf(CustomError);
+  }
 });
