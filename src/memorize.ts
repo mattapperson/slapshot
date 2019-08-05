@@ -51,7 +51,8 @@ export function memorize<ReturnedData = any>(
     - Method snapshot name: ${fullSnapshotName}
     - Test file: ${jestContext.testPath}
 
-    Please re-run Jest with the --updateSnapshot flag AND the env var SLAPSHOT_ONLINE=true.`.replace(
+    ${process.env.SLAPSHOT_RERUN_MESSAGE ||
+      "Please re-run Jest with the --updateSnapshot flag AND the env var SLAPSHOT_ONLINE=true"}.`.replace(
         new RegExp("        ", "g"),
         ""
       )
@@ -112,7 +113,8 @@ function resolveData(
         - Method snapshot name: ${fullSnapshotName}
         - Test file: ${jestContext.testPath}
 
-        Please re-run Jest with the --updateSnapshot flag AND the env var SLAPSHOT_ONLINE=true.`.replace(
+        ${process.env.SLAPSHOT_RERUN_MESSAGE ||
+          "Please re-run Jest with the --updateSnapshot flag AND the env var SLAPSHOT_ONLINE=true"}.`.replace(
           new RegExp("        ", "g"),
           ""
         )
