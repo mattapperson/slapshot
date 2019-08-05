@@ -184,7 +184,7 @@ test("Impure memorized methods also add call count to name", async () => {
   expect(result2).toBe(21);
 });
 
-test.only("thrown errors are replayed", async () => {
+test("thrown errors are replayed", async () => {
   process.argv.push("--updateSnapshot");
   process.env.SLAPSHOT_ONLINE = "true";
 
