@@ -227,3 +227,37 @@ test("thrown errors are replayed", async () => {
 
   expect(mockedCB).not.toBeCalled();
 });
+
+test("thrown errors are replayed with custom properties", async () => {
+  process.argv.push("--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "true";
+
+  class CustomError extends Error {
+    public customProp: any;
+    constructor(message: string) {
+      super(message);
+      this.customProp = "bar";
+    }
+  }
+
+  const mockedCB = jest.fn();
+  expect(() => {
+    memorize("error", () => {
+      throw new CustomError("foo");
+    });
+  }).toThrowError("foo");
+
+  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "false";
+  expect(() => {
+    memorize("error", mockedCB);
+  }).toThrowError("foo");
+
+  try {
+    memorize("error", mockedCB);
+  } catch (e) {
+    expect(e.customProp).toEqual("bar");
+  }
+
+  expect(mockedCB).not.toBeCalled();
+});
