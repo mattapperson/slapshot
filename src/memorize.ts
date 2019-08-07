@@ -142,7 +142,6 @@ function resolveData(
     if (typeof methodResultsToCompare === "object") {
       methodResultsToCompare = JSON.stringify(methodResultsToCompare);
     }
-    console.log(fullSnapshotName);
 
     if (
       (snap.results || snap.thrownError) &&
