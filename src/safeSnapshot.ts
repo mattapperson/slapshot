@@ -1,10 +1,15 @@
-export function safeSnapshot(obj: any, toSnapshot: boolean = true) {
+export function safeSnapshot(obj: any, toSnapshot: boolean = true): any {
   if (typeof obj !== "object") {
     return obj;
   }
   if (obj === null) {
     return null;
   }
+
+  if (Array.isArray(obj)) {
+    return obj.map((val: any) => safeSnapshot(val, toSnapshot));
+  }
+
   return Object.keys(obj).reduce(
     (safeObject, key) => {
       if (
