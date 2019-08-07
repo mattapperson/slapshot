@@ -170,6 +170,18 @@ test("works with undefined value", async () => {
   expect(data).toBeUndefined();
 });
 
+test("works with array value", async () => {
+  process.argv.push("--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "true";
+
+  memorize("c", () => [1, 2, 3]);
+
+  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "false";
+  const data = memorize("c", () => {});
+  expect(data).toEqual([1, 2, 3]);
+});
+
 test("nested APIs with functions throw an error when called unless mocked manualy", async () => {
   process.argv.push("--updateSnapshot");
   process.env.SLAPSHOT_ONLINE = "true";
