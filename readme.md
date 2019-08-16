@@ -43,8 +43,6 @@ You could write 2 test suites... but that's 2x the tests to maintain.
 
 ## Example usage / API
 
-=======
-
 ```js
 /**
  * Method 1: callWhenOnline

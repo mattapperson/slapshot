@@ -158,6 +158,30 @@ test("works with null value", async () => {
   expect(data).toBe(null);
 });
 
+test("works with JSON string in memorize name", async () => {
+  process.argv.push("--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "true";
+
+  const liveStart = performance.now();
+  await memorize(`JSON - ${JSON.stringify({ foo: "dog" })}`, mockThunk);
+  const liveEnd = performance.now();
+
+  process.argv.push("--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "false";
+  const recordedStart = performance.now();
+  const data = await memorize(
+    `JSON - ${JSON.stringify({ foo: "dog" })}`,
+    jest.fn()
+  );
+  const recordedEnd = performance.now();
+
+  expect(liveEnd - liveStart).toBeGreaterThan(190);
+  expect(recordedEnd - recordedStart).toBeLessThan(10);
+  expect(mockPromise.mock.calls.length).toBe(1);
+  expect(mockThunk.mock.calls.length).toBe(1);
+  expect(data.foo).toBe("bar");
+});
+
 test("works with undefined value", async () => {
   process.argv.push("--updateSnapshot");
   process.env.SLAPSHOT_ONLINE = "true";
@@ -218,6 +242,35 @@ test("Impure memorized methods also add call count to name", async () => {
 
   expect(result1).toBe(22);
   expect(result2).toBe(21);
+});
+
+test("No race conditions - works many times out of sync", async () => {
+  process.argv.push("--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "true";
+
+  const asyncEvent = async () => {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve(22);
+      }, 5);
+    });
+  };
+
+  let i = 0;
+  let all = [];
+  while (i < 10) {
+    i = i + 1;
+    all.push(memorize(`c - ${i}`, asyncEvent));
+  }
+  await Promise.all(all);
+
+  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "false";
+  i = 0;
+  while (i < 10) {
+    i = i + 1;
+    await memorize(`c - ${i}`, asyncEvent);
+  }
 });
 
 test("thrown errors are replayed", async () => {

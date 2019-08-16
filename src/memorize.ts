@@ -80,7 +80,6 @@ export function memorize<ReturnedData = any>(
   }
 
   if (!runInOnlineMode()) {
-    snap;
     return returnValues(safeSnapshot(snap, false));
   }
 
@@ -184,18 +183,15 @@ function resolveData(
     return returnValues(methodResults);
   }
 
-  snapshots[fullSnapshotName] = safeSnapshot(methodResults);
-
-  const newSnap = Object.keys(snapshots)
-    .sort()
-    .reduce((acc, key) => {
-      return (
-        acc +
-        `\nexports['${key}'] = ${JSON.stringify(snapshots[key], null, 2)}\n`
-      );
-    }, "");
+  const newSnap = `\nexports['${fullSnapshotName}'] = ${JSON.stringify(
+    safeSnapshot(methodResults),
+    null,
+    2
+  )}\n`;
 
   mkdir(snapFile);
-  fs.writeFileSync(snapFile, newSnap);
+  fs.writeFileSync(snapFile, newSnap, {
+    flag: "a"
+  });
   return returnValues(methodResults);
 }
