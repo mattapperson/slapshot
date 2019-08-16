@@ -273,3 +273,50 @@ test("thrown errors are replayed with custom properties", async () => {
 
   expect(mockedCB).not.toBeCalled();
 });
+
+test("consoles error of non-matching snap when validateSnapshot is not set", async () => {
+  process.argv.push("--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "true";
+  const spy = jest.spyOn(console, "warn");
+
+  memorize("c", () => 22);
+
+  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "true";
+
+  memorize("c", () => {});
+
+  expect(spy).toBeCalled();
+  spy.mockRestore();
+});
+
+test("throws error of non-matching snap when validateSnapshot is set to true", async () => {
+  process.argv.push("--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "true";
+
+  memorize("validateSnapshot", () => 22);
+
+  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "true";
+  expect(() => {
+    memorize("validateSnapshot", () => {}, {
+      validateSnapshot: true
+    });
+  }).toThrow();
+});
+
+test("deffers to validateSnapshot to validate snapshot when validateSnapshot is a funtion", async () => {
+  process.argv.push("--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "true";
+
+  memorize("c", () => 22);
+
+  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SLAPSHOT_ONLINE = "false";
+  const data = memorize("c", () => {}, {
+    validateSnapshot: liveData => {
+      expect(liveData).toMatchSnapshot();
+    }
+  });
+  expect(data).toBe(22);
+});

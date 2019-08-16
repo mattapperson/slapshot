@@ -20,10 +20,16 @@ function returnValues(value: SlapshotDataFormat) {
   }
 }
 
+type ValidationCallback = (liveData: any, snapshottedData: any) => void;
+type ValidationOptions = boolean | ValidationCallback;
+
 export function memorize<ReturnedData = any>(
   snapshotName: string,
   method: () => Promise<ReturnedData> | ReturnedData,
-  { pure = true }: { pure?: boolean } = {}
+  {
+    pure = true,
+    validateSnapshot = false
+  }: { pure?: boolean; validateSnapshot?: ValidationOptions } = {}
 ): Promise<ReturnedData> | ReturnedData {
   let jestContext: any;
   // Hack to get access to jest current test context
@@ -97,7 +103,8 @@ export function memorize<ReturnedData = any>(
             results: null
           },
           jestContext,
-          snapshots
+          snapshots,
+          validateSnapshot
         );
       })
       .then(methodResults => {
@@ -109,7 +116,8 @@ export function memorize<ReturnedData = any>(
             results: methodResults
           },
           jestContext,
-          snapshots
+          snapshots,
+          validateSnapshot
         );
       });
   }
@@ -120,7 +128,8 @@ export function memorize<ReturnedData = any>(
     fullSnapshotName,
     methodResults,
     jestContext,
-    snapshots
+    snapshots,
+    validateSnapshot
   );
 }
 
@@ -130,36 +139,46 @@ function resolveData(
   fullSnapshotName: string,
   methodResults: SlapshotDataFormat,
   jestContext: any,
-  snapshots: Snapshot
+  snapshots: Snapshot,
+  validateSnapshot: ValidationOptions
 ) {
   if (!shouldUpdateSnapshot() && runInOnlineMode()) {
     let snapDataToCompare = snap;
-    if (typeof snapDataToCompare === "object") {
-      snapDataToCompare = JSON.stringify(snapDataToCompare);
-    }
 
-    let methodResultsToCompare: any = methodResults;
-    if (typeof methodResultsToCompare === "object") {
-      methodResultsToCompare = JSON.stringify(methodResultsToCompare);
-    }
+    if (validateSnapshot && typeof validateSnapshot === "function") {
+      validateSnapshot(methodResults, snapDataToCompare);
+    } else {
+      if (typeof snapDataToCompare === "object") {
+        snapDataToCompare = JSON.stringify(snapDataToCompare);
+      }
 
-    if (
-      (snap.results || snap.thrownError) &&
-      methodResultsToCompare !== snapDataToCompare
-    ) {
-      throw new Error(
-        `[Warning] Intigration test result does not match the memorized snap file:
+      let methodResultsToCompare: any = methodResults;
+      if (typeof methodResultsToCompare === "object") {
+        methodResultsToCompare = JSON.stringify(methodResultsToCompare);
+      }
+
+      if (
+        (snap.results || snap.thrownError) &&
+        methodResultsToCompare !== snapDataToCompare
+      ) {
+        const defaultWarning = `[Warning] Integration test result does not match the memorized snap file:
         - Method snapshot name: ${fullSnapshotName}
         - Test file: ${jestContext.testPath}
         - Live result: ${methodResultsToCompare}
         - Existing Snap: ${snapDataToCompare}
-
+  
         ${process.env.SLAPSHOT_RERUN_MESSAGE ||
           "Please re-run Jest with the --updateSnapshot flag AND the env var SLAPSHOT_ONLINE=true"}.`.replace(
-          new RegExp("        ", "g"),
+          new RegExp("          ", "g"),
           ""
-        )
-      );
+        );
+
+        if (!validateSnapshot) {
+          console.warn(defaultWarning);
+        } else if (typeof validateSnapshot === "boolean") {
+          throw new Error(defaultWarning);
+        }
+      }
     }
 
     return returnValues(methodResults);
