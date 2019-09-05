@@ -48,10 +48,13 @@ export function memorize<ReturnedData = any>(
       testMap[jestContext.currentTestName]
     })`;
   }
-
-  const basename = `${path.basename(jestContext.testPath)}.snap`;
+  const testPath = jestContext.testPath
+    .split(".")
+    .slice(0, -1)
+    .join(".");
+  const basename = `${path.basename(testPath)}.snap`;
   const snapFile = path.resolve(
-    jestContext.testPath,
+    testPath,
     "..",
     "__memorize_snapshots__",
     basename
@@ -69,7 +72,8 @@ export function memorize<ReturnedData = any>(
     throw new Error(
       `Missing snapshot
     - Method snapshot name: ${fullSnapshotName}
-    - Test file: ${jestContext.testPath}
+    - In snapshot file: ${basename}
+    - Test file: ${testPath}
 
     ${process.env.SLAPSHOT_RERUN_MESSAGE ||
       "Please re-run Jest with the --updateSnapshot flag AND the env var SLAPSHOT_ONLINE=true"}.`.replace(
@@ -162,7 +166,10 @@ function resolveData(
       ) {
         const defaultWarning = `[Warning] Integration test result does not match the memorized snap file:
         - Method snapshot name: ${fullSnapshotName}
-        - Test file: ${jestContext.testPath}
+        - Test file: ${jestContext.testPath
+          .split(".")
+          .slice(0, -1)
+          .join(".")}
         - Live result: ${methodResultsToCompare}
         - Existing Snap: ${snapDataToCompare}
   
