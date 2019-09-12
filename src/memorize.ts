@@ -52,7 +52,7 @@ export function memorize<ReturnedData = any>(
     .split(".")
     .slice(0, -1)
     .join(".");
-  const basename = `${path.basename(testPath)}.snap`;
+  const basename = `${path.basename(testPath)}.slap_snap`;
   const snapFile = path.resolve(
     testPath,
     "..",
@@ -106,7 +106,6 @@ export function memorize<ReturnedData = any>(
             results: null
           },
           jestContext,
-          snapshots,
           validateSnapshot
         );
       })
@@ -119,7 +118,6 @@ export function memorize<ReturnedData = any>(
             results: methodResults
           },
           jestContext,
-          snapshots,
           validateSnapshot
         );
       });
@@ -131,7 +129,6 @@ export function memorize<ReturnedData = any>(
     fullSnapshotName,
     methodResults,
     jestContext,
-    snapshots,
     validateSnapshot
   );
 }
@@ -142,7 +139,6 @@ function resolveData(
   fullSnapshotName: string,
   methodResults: SlapshotDataFormat,
   jestContext: any,
-  snapshots: Snapshot,
   validateSnapshot: ValidationOptions
 ) {
   if (!shouldUpdateSnapshot() && runInOnlineMode()) {
