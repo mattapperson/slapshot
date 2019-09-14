@@ -1,6 +1,7 @@
 # Slapshot
 
-[![Codeship Status for mattapperson/slapshot](https://app.codeship.com/projects/a74efe30-84d8-0137-7d90-12effd3c42b7/status?branch=master)](https://app.codeship.com/projects/353402)
+
+![](https://github.com/mattapperson/slapshot/workflows/Node%20CI/badge.svg)
 [![NPM version](https://img.shields.io/npm/v/@mattapperson/slapshot.svg)](https://www.npmjs.com/package/@mattapperson/slapshot)
 [![dependencies Status](https://david-dm.org/mattapperson/slapshot/status.svg)](https://david-dm.org/mattapperson/slapshot)
 
