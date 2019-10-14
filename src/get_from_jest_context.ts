@@ -27,7 +27,7 @@ export const getFromJestContext = (snapshotName: string, pure: boolean) => {
   const slapFilePath = path.resolve(
     testFilePath,
     "..",
-    "__memorize_snapshots__",
+    "__snapshots__",
     testFileName
   );
 
