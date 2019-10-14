@@ -1,4 +1,3 @@
-import path from "path";
 import fs from "fs";
 import { Snapshot, SlapshotDataFormat } from "./types";
 import { runInOnlineMode, shouldUpdateSnapshot } from "./utils";
@@ -9,8 +8,7 @@ import { mkdir } from "./mkdir";
 import errorToJSON from "utils-error-to-json";
 // @ts-ignore
 import hydrateError from "utils-error-reviver";
-
-const testMap: any = {};
+import { getFromJestContext } from "./get_from_jest_context";
 
 function returnValues(value: SlapshotDataFormat) {
   if (value.thrownError) {
@@ -31,49 +29,21 @@ export function memorize<ReturnedData = any>(
     validateSnapshot = false
   }: { pure?: boolean; validateSnapshot?: ValidationOptions } = {}
 ): Promise<ReturnedData> | ReturnedData {
-  let jestContext: any;
-  // Hack to get access to jest current test context
-  // @ts-ignore
-  expect().__slapshot__hack__context(context => (jestContext = context));
-
-  let fullSnapshotName = `${jestContext.currentTestName} - ${snapshotName}`;
-
-  if (!pure) {
-    if (!testMap[jestContext.currentTestName]) {
-      testMap[jestContext.currentTestName] = 0;
-    }
-    testMap[jestContext.currentTestName] += 1;
-
-    fullSnapshotName = `${fullSnapshotName} (${
-      testMap[jestContext.currentTestName]
-    })`;
-  }
-  const testPath = jestContext.testPath
-    .split(".")
-    .slice(0, -1)
-    .join(".");
-  const basename = `${path.basename(testPath)}.slap_snap`;
-  const snapFile = path.resolve(
-    testPath,
-    "..",
-    "__memorize_snapshots__",
-    basename
-  );
-
+  const testData = getFromJestContext(snapshotName, pure);
   let snapshots: Snapshot = {};
 
-  if (fs.existsSync(snapFile)) {
-    snapshots = loadSnaps(snapFile);
+  if (fs.existsSync(testData.slapFilePath)) {
+    snapshots = loadSnaps(testData.slapFilePath);
   }
-  const snapshot = snapshots[fullSnapshotName];
+  const snapshot = snapshots[testData.fullSnapshotName];
   const snap = snapshot || ({} as Snapshot);
 
   if (!shouldUpdateSnapshot() && !runInOnlineMode() && !snapshot) {
     throw new Error(
       `Missing snapshot
-    - Method snapshot name: ${fullSnapshotName}
-    - In snapshot file: ${basename}
-    - Test file: ${testPath}
+    - Method snapshot name: ${testData.fullSnapshotName}
+    - In snapshot file: ${testData.testFileName}
+    - Test file: ${testData.testFilePath}
 
     ${process.env.SLAPSHOT_RERUN_MESSAGE ||
       "Please re-run Jest with the --updateSnapshot flag AND the env var SLAPSHOT_ONLINE=true"}.`.replace(
@@ -98,37 +68,37 @@ export function memorize<ReturnedData = any>(
     return Promise.resolve(methodResults.results)
       .catch(error => {
         return resolveData(
-          snapFile,
+          testData.slapFilePath,
           snap,
-          fullSnapshotName,
+          testData.fullSnapshotName,
           {
             thrownError: JSON.stringify(errorToJSON(error)),
             results: null
           },
-          jestContext,
+          testData.testFilePath,
           validateSnapshot
         );
       })
       .then(methodResults => {
         return resolveData(
-          snapFile,
+          testData.slapFilePath,
           snap,
-          fullSnapshotName,
+          testData.fullSnapshotName,
           {
             results: methodResults
           },
-          jestContext,
+          testData.testFilePath,
           validateSnapshot
         );
       });
   }
 
   return resolveData(
-    snapFile,
+    testData.slapFilePath,
     snap,
-    fullSnapshotName,
+    testData.fullSnapshotName,
     methodResults,
-    jestContext,
+    testData.testFilePath,
     validateSnapshot
   );
 }
@@ -138,7 +108,7 @@ function resolveData(
   snap: any,
   fullSnapshotName: string,
   methodResults: SlapshotDataFormat,
-  jestContext: any,
+  testFilePath: string,
   validateSnapshot: ValidationOptions
 ) {
   if (!shouldUpdateSnapshot() && runInOnlineMode()) {
@@ -162,7 +132,7 @@ function resolveData(
       ) {
         const defaultWarning = `[Warning] Integration test result does not match the memorized snap file:
         - Method snapshot name: ${fullSnapshotName}
-        - Test file: ${jestContext.testPath
+        - Test file: ${testFilePath
           .split(".")
           .slice(0, -1)
           .join(".")}
@@ -186,14 +156,14 @@ function resolveData(
     return returnValues(methodResults);
   }
 
-  const newSnap = `\nexports['${fullSnapshotName}'] = ${JSON.stringify(
+  const newSnapData = `\nexports['${fullSnapshotName}'] = ${JSON.stringify(
     safeSnapshot(methodResults),
     null,
     2
   )}\n`;
 
   mkdir(snapFile);
-  fs.writeFileSync(snapFile, newSnap, {
+  fs.writeFileSync(snapFile, newSnapData, {
     flag: "a"
   });
   return returnValues(methodResults);
