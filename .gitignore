@@ -1,5 +1,5 @@
 .DS_Store
 /node_modules
-/src/__memorize_snapshots__
+/**/**.snap
 /yarn-error.log
 /lib

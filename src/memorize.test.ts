@@ -5,7 +5,7 @@ import fs from "fs";
 import { performance } from "perf_hooks";
 import "./hack_context";
 
-const snapshotDir = `${__dirname}/__memorize_snapshots__`;
+const snapshotDir = `${__dirname}/__snapshots__`;
 
 const fetchData = () => {
   return new Promise(resolve => {
@@ -45,7 +45,7 @@ test("calls thunk on first run", async () => {
   expect(data.foo).toBe("bar");
 });
 
-test("writes a __data_snapshot__ file to disk", async () => {
+test("writes a __snapshot__ file to disk", async () => {
   expect(fs.existsSync(snapshotDir)).toBe(false);
   process.argv.push("--updateSnapshot");
   process.env.SLAPSHOT_ONLINE = "true";
