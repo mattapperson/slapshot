@@ -300,3 +300,172 @@ exports['deffers to validateSnapshot to validate snapshot when validateSnapshot 
   "results": 22,
   "thrownError": null
 }
+
+exports['calls thunk on first run - a'] = {
+  "results": {
+    "foo": "bar"
+  }
+}
+
+exports['writes a __snapshot__ file to disk - b'] = {
+  "results": {
+    "foo": "bar"
+  }
+}
+
+exports['resolves from disk on 2nd hit - c'] = {
+  "results": {
+    "foo": "bar"
+  }
+}
+
+exports['calls thunk on first run - a'] = {
+  "results": {
+    "foo": "bar"
+  }
+}
+
+exports['writes a __snapshot__ file to disk - b'] = {
+  "results": {
+    "foo": "bar"
+  }
+}
+
+exports['resolves from disk on 2nd hit - c'] = {
+  "results": {
+    "foo": "bar"
+  }
+}
+
+exports['calls run but dont update with SLAPSHOT_ONLINE - d'] = {
+  "results": {
+    "foo": "bar",
+    "method": "[UNMOCKED-UNSNAPSHOTTED-FUNCTION]"
+  }
+}
+
+exports['calls run but dont update with SLAPSHOT_ONLINE - d'] = {
+  "results": {
+    "foo": "foo"
+  }
+}
+
+exports['calls run still in unit tests with just updateSnapshot - d'] = {
+  "results": {
+    "foo": "bar"
+  }
+}
+
+exports['calls run and update with updateSnapshot and SLAPSHOT_ONLINE - d'] = {
+  "results": {
+    "foo": "bar",
+    "method": "[UNMOCKED-UNSNAPSHOTTED-FUNCTION]"
+  }
+}
+
+exports['calls run and update with updateSnapshot and SLAPSHOT_ONLINE - d'] = {
+  "results": {
+    "foo": "foo"
+  }
+}
+
+exports['works with strings and numbers - c'] = {
+  "results": 22,
+  "thrownError": null
+}
+
+exports['works with null value - c'] = {
+  "results": null,
+  "thrownError": null
+}
+
+exports['works with JSON string in memorize name - JSON - {"foo":"dog"}'] = {
+  "results": {
+    "foo": "bar"
+  }
+}
+
+exports['works with undefined value - c'] = {
+  "thrownError": null
+}
+
+exports['works with array value - c'] = {
+  "results": [
+    1,
+    2,
+    3
+  ],
+  "thrownError": null
+}
+
+exports['nested APIs with functions throw an error when called unless mocked manualy - complex'] = {
+  "results": {
+    "foo": "bar",
+    "method": "[UNMOCKED-UNSNAPSHOTTED-FUNCTION]"
+  }
+}
+
+exports['No race conditions - works many times out of sync - c - 1'] = {
+  "results": 22
+}
+
+exports['No race conditions - works many times out of sync - c - 2'] = {
+  "results": 22
+}
+
+exports['No race conditions - works many times out of sync - c - 3'] = {
+  "results": 22
+}
+
+exports['No race conditions - works many times out of sync - c - 4'] = {
+  "results": 22
+}
+
+exports['No race conditions - works many times out of sync - c - 5'] = {
+  "results": 22
+}
+
+exports['No race conditions - works many times out of sync - c - 6'] = {
+  "results": 22
+}
+
+exports['No race conditions - works many times out of sync - c - 7'] = {
+  "results": 22
+}
+
+exports['No race conditions - works many times out of sync - c - 8'] = {
+  "results": 22
+}
+
+exports['No race conditions - works many times out of sync - c - 9'] = {
+  "results": 22
+}
+
+exports['No race conditions - works many times out of sync - c - 10'] = {
+  "results": 22
+}
+
+exports['thrown errors are replayed - error'] = {
+  "results": null,
+  "thrownError": "{\"type\":\"Error\",\"message\":\"foo\",\"name\":\"Error\",\"stack\":\"Error: foo\\n    at memorize_1.memorize (/home/coder/project/data/extensions/wallabyjs.wallaby-vscode-1.0.147/projects/f5531a1be1fa0655/instrumented/src/memorize.test.js:386:27)\\n    at Object.memorize (/home/coder/project/data/extensions/wallabyjs.wallaby-vscode-1.0.147/projects/f5531a1be1fa0655/instrumented/src/memorize.js:52:46)\\n    at expect (/home/coder/project/data/extensions/wallabyjs.wallaby-vscode-1.0.147/projects/f5531a1be1fa0655/instrumented/src/memorize.test.js:382:38)\\n    at Object.<anonymous> (/home/coder/projects/slapshot/node_modules/expect/build/toThrowMatchers.js:81:11)\\n    at Object.throwingMatcher [as toThrowError] (/home/coder/projects/slapshot/node_modules/expect/build/index.js:342:33)\\n    at /home/coder/project/data/extensions/wallabyjs.wallaby-vscode-1.0.147/projects/f5531a1be1fa0655/instrumented/src/memorize.test.js:389:12\\n    at Generator.next (<anonymous>)\\n    at /home/coder/projects/slapshot/node_modules/tslib/tslib.js:110:75\\n    at new Promise (<anonymous>)\\n    at Object.__awaiter (/home/coder/projects/slapshot/node_modules/tslib/tslib.js:106:16)\\n    at Object.<anonymous>.test (/home/coder/project/data/extensions/wallabyjs.wallaby-vscode-1.0.147/projects/f5531a1be1fa0655/instrumented/src/memorize.test.js:375:34)\\n    at Object.e.length.arguments.(anonymous function) (/home/coder/project/data/extensions/wallabyjs.wallaby-vscode-1.0.147/wallaby/runners/node/jest@0.4.3/jasmine2Initializer.js:14:1786)\\n    at Object.asyncJestTest (/home/coder/projects/slapshot/node_modules/jest-jasmine2/build/jasmineAsyncInstall.js:102:37)\\n    at resolve (/home/coder/projects/slapshot/node_modules/jest-jasmine2/build/queueRunner.js:43:12)\\n    at new Promise (<anonymous>)\\n    at mapper (/home/coder/projects/slapshot/node_modules/jest-jasmine2/build/queueRunner.js:26:19)\\n    at promise.then (/home/coder/projects/slapshot/node_modules/jest-jasmine2/build/queueRunner.js:73:41)\"}"
+}
+
+exports['thrown errors are replayed with custom properties - error'] = {
+  "results": null,
+  "thrownError": "{\"type\":\"Error\",\"message\":\"foo\",\"name\":\"Error\",\"stack\":\"Error: foo\\n    at memorize_1.memorize (/home/coder/project/data/extensions/wallabyjs.wallaby-vscode-1.0.147/projects/f5531a1be1fa0655/instrumented/src/memorize.test.js:421:27)\\n    at Object.memorize (/home/coder/project/data/extensions/wallabyjs.wallaby-vscode-1.0.147/projects/f5531a1be1fa0655/instrumented/src/memorize.js:52:46)\\n    at expect (/home/coder/project/data/extensions/wallabyjs.wallaby-vscode-1.0.147/projects/f5531a1be1fa0655/instrumented/src/memorize.test.js:417:38)\\n    at Object.<anonymous> (/home/coder/projects/slapshot/node_modules/expect/build/toThrowMatchers.js:81:11)\\n    at Object.throwingMatcher [as toThrowError] (/home/coder/projects/slapshot/node_modules/expect/build/index.js:342:33)\\n    at /home/coder/project/data/extensions/wallabyjs.wallaby-vscode-1.0.147/projects/f5531a1be1fa0655/instrumented/src/memorize.test.js:424:12\\n    at Generator.next (<anonymous>)\\n    at /home/coder/projects/slapshot/node_modules/tslib/tslib.js:110:75\\n    at new Promise (<anonymous>)\\n    at Object.__awaiter (/home/coder/projects/slapshot/node_modules/tslib/tslib.js:106:16)\\n    at Object.<anonymous>.test (/home/coder/project/data/extensions/wallabyjs.wallaby-vscode-1.0.147/projects/f5531a1be1fa0655/instrumented/src/memorize.test.js:404:34)\\n    at Object.e.length.arguments.(anonymous function) (/home/coder/project/data/extensions/wallabyjs.wallaby-vscode-1.0.147/wallaby/runners/node/jest@0.4.3/jasmine2Initializer.js:14:1786)\\n    at Object.asyncJestTest (/home/coder/projects/slapshot/node_modules/jest-jasmine2/build/jasmineAsyncInstall.js:102:37)\\n    at resolve (/home/coder/projects/slapshot/node_modules/jest-jasmine2/build/queueRunner.js:43:12)\\n    at new Promise (<anonymous>)\\n    at mapper (/home/coder/projects/slapshot/node_modules/jest-jasmine2/build/queueRunner.js:26:19)\\n    at promise.then (/home/coder/projects/slapshot/node_modules/jest-jasmine2/build/queueRunner.js:73:41)\",\"customProp\":\"bar\"}"
+}
+
+exports['consoles error of non-matching snap when validateSnapshot is not set - c'] = {
+  "results": 22,
+  "thrownError": null
+}
+
+exports['throws error of non-matching snap when validateSnapshot is set to true - validateSnapshot'] = {
+  "results": 22,
+  "thrownError": null
+}
+
+exports['deffers to validateSnapshot to validate snapshot when validateSnapshot is a funtion - c'] = {
+  "results": 22,
+  "thrownError": null
+}
