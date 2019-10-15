@@ -46,6 +46,7 @@ export const getFromJestContext = (snapshotName: string, pure: boolean) => {
     addSnapshot: jestContext.addSnapshot as (
       testName: string,
       value: string
-    ) => void
+    ) => void,
+    markSnapAsUsed: jestContext.markSnapAsUsed
   };
 };

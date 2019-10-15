@@ -53,6 +53,7 @@ export function memorize<ReturnedData = any>(
   }
 
   if (!runInOnlineMode()) {
+    testData.markSnapAsUsed(testData.fullSnapshotName);
     return returnValues(safeSnapshot(snap, false));
   }
 
@@ -120,7 +121,7 @@ function resolveData(
       if (typeof methodResultsToCompare === "object") {
         methodResultsToCompare = JSON.stringify(methodResultsToCompare);
       }
-      console.log(methodResultsToCompare, snapDataToCompare);
+
       if (
         (snap.results || snap.thrownError) &&
         methodResultsToCompare !== snapDataToCompare
@@ -147,7 +148,7 @@ function resolveData(
         }
       }
     }
-
+    testData.markSnapAsUsed(testData.fullSnapshotName);
     return returnValues(methodResults);
   }
 
@@ -155,6 +156,6 @@ function resolveData(
     fullSnapshotName,
     JSON.stringify(safeSnapshot(methodResults))
   );
-
+  testData.markSnapAsUsed(testData.fullSnapshotName);
   return returnValues(methodResults);
 }

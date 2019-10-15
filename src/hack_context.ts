@@ -15,6 +15,9 @@ expect.extend({
       addSnapshot: (testName: string, value: string) => {
         // @ts-ignore
         this.snapshotState._addSnapshot(testName, value, { isInline: false });
+      },
+      markSnapAsUsed: (snapName: string) => {
+        (this as any).snapshotState._uncheckedKeys.delete(snapName);
       }
     });
     return { pass: true, message: () => "expected the slapshot hack to work" };
