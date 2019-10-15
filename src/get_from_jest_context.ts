@@ -15,9 +15,11 @@ export const getFromJestContext = (snapshotName: string, pure: boolean) => {
     }
     testMap[jestContext.currentTestName] += 1;
 
-    fullSnapshotName = `${fullSnapshotName} (${
+    fullSnapshotName = `${fullSnapshotName} -- ${
       testMap[jestContext.currentTestName]
-    })`;
+    }`;
+  } else {
+    fullSnapshotName = `${fullSnapshotName} -- 0`;
   }
   const testFilePath = jestContext.testPath
     .split(".")
@@ -35,6 +37,15 @@ export const getFromJestContext = (snapshotName: string, pure: boolean) => {
     slapFilePath,
     testFileName,
     testFilePath,
-    fullSnapshotName
+    fullSnapshotName,
+    shouldUpdateSnapshot:
+      (process.env.SHOULD_UPDATE_SNAPSHOTS === undefined &&
+        jestContext.shouldUpdateSnapshot) ||
+      process.env.SHOULD_UPDATE_SNAPSHOTS === "true",
+    snapshotData: jestContext.snapshotData,
+    addSnapshot: jestContext.addSnapshot as (
+      testName: string,
+      value: string
+    ) => void
   };
 };

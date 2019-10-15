@@ -1,5 +1,4 @@
 /* eslint-env jest */
-import rimraf from "rimraf";
 import { memorize } from "./memorize";
 import fs from "fs";
 import { performance } from "perf_hooks";
@@ -27,17 +26,15 @@ let mockPromise: any;
 let mockThunk: any;
 
 beforeEach(() => {
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
-  process.argv = process.argv.filter(e => e !== "-u");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = undefined;
   process.env.SLAPSHOT_ONLINE = undefined;
 
   mockPromise = jest.fn(fetchData);
   mockThunk = jest.fn(mockPromise);
-  rimraf.sync(snapshotDir);
 });
 
 test("calls thunk on first run", async () => {
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
   const data = await memorize("a", mockThunk);
   expect(mockPromise.mock.calls.length).toBe(1);
@@ -46,8 +43,7 @@ test("calls thunk on first run", async () => {
 });
 
 test("writes a __snapshot__ file to disk", async () => {
-  expect(fs.existsSync(snapshotDir)).toBe(false);
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
 
   await memorize("b", mockThunk);
@@ -55,14 +51,14 @@ test("writes a __snapshot__ file to disk", async () => {
 });
 
 test("resolves from disk on 2nd hit", async () => {
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
 
   const liveStart = performance.now();
   await memorize("c", mockThunk);
   const liveEnd = performance.now();
 
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "false";
   const recordedStart = performance.now();
   const data = await memorize("c", jest.fn());
@@ -78,11 +74,11 @@ test("resolves from disk on 2nd hit", async () => {
 test("calls run but dont update with SLAPSHOT_ONLINE", async () => {
   const mockWithValue = jest.fn(complexReturn);
 
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
   await memorize("d", mockWithValue);
 
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
   process.env.SLAPSHOT_ONLINE = "true";
   expect(() => {
     const data: any = memorize("d", () => mockWithValue({ foo: "foo" }));
@@ -91,7 +87,7 @@ test("calls run but dont update with SLAPSHOT_ONLINE", async () => {
     expect(data.foo).toBe("foo");
   }).toThrow();
 
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
   process.env.SLAPSHOT_ONLINE = "false";
   const data2: any = await memorize("d", () => mockWithValue({ foo: "foo" }));
   expect(mockWithValue.mock.calls.length).toBe(2);
@@ -100,11 +96,11 @@ test("calls run but dont update with SLAPSHOT_ONLINE", async () => {
 });
 
 test("calls run still in unit tests with just updateSnapshot", async () => {
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
   await memorize("d", mockThunk);
 
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
   process.env.SLAPSHOT_ONLINE = "false";
   const data: any = await memorize("d", mockThunk);
   expect(mockThunk.mock.calls.length).toBe(1);
@@ -115,18 +111,18 @@ test("calls run still in unit tests with just updateSnapshot", async () => {
 test("calls run and update with updateSnapshot and SLAPSHOT_ONLINE", async () => {
   const mockWithValue = jest.fn(complexReturn);
 
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
   await memorize("d", mockWithValue);
 
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
   const data: any = await memorize("d", () => mockWithValue({ foo: "foo" }));
   expect(mockWithValue.mock.calls.length).toBe(2);
   expect(mockWithValue.mock.calls.length).toBe(2);
   expect(data.foo).toBe("foo");
 
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
   process.env.SLAPSHOT_ONLINE = "false";
   const data2: any = await memorize("d", () => mockWithValue({ foo: "foo" }));
   expect(mockWithValue.mock.calls.length).toBe(2);
@@ -135,38 +131,38 @@ test("calls run and update with updateSnapshot and SLAPSHOT_ONLINE", async () =>
 });
 
 test("works with strings and numbers", async () => {
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
 
   memorize("c", () => 22);
 
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
   process.env.SLAPSHOT_ONLINE = "false";
   const data = memorize("c", () => {});
   expect(data).toBe(22);
 });
 
 test("works with null value", async () => {
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
 
   memorize("c", () => null);
 
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
   process.env.SLAPSHOT_ONLINE = "false";
   const data = memorize("c", () => {});
   expect(data).toBe(null);
 });
 
 test("works with JSON string in memorize name", async () => {
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
 
   const liveStart = performance.now();
   await memorize(`JSON - ${JSON.stringify({ foo: "dog" })}`, mockThunk);
   const liveEnd = performance.now();
 
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "false";
   const recordedStart = performance.now();
   const data = await memorize(
@@ -183,35 +179,35 @@ test("works with JSON string in memorize name", async () => {
 });
 
 test("works with undefined value", async () => {
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
 
   memorize("c", () => undefined);
 
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
   process.env.SLAPSHOT_ONLINE = "false";
   const data = memorize("c", () => {});
   expect(data).toBeUndefined();
 });
 
 test("works with array value", async () => {
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
 
   memorize("c", () => [1, 2, 3]);
 
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
   process.env.SLAPSHOT_ONLINE = "false";
   const data = memorize("c", () => {});
   expect(data).toEqual([1, 2, 3]);
 });
 
 test("nested APIs with functions throw an error when called unless mocked manualy", async () => {
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
   await memorize("complex", complexReturn);
 
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
   process.env.SLAPSHOT_ONLINE = "false";
   const data: any = await memorize("complex", complexReturn);
   expect(data.foo).toBe("bar");
@@ -245,7 +241,7 @@ test("Impure memorized methods also add call count to name", async () => {
 });
 
 test("No race conditions - works many times out of sync", async () => {
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
 
   const asyncEvent = async () => {
@@ -264,7 +260,7 @@ test("No race conditions - works many times out of sync", async () => {
   }
   await Promise.all(all);
 
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
   process.env.SLAPSHOT_ONLINE = "false";
   i = 0;
   while (i < 10) {
@@ -274,7 +270,7 @@ test("No race conditions - works many times out of sync", async () => {
 });
 
 test("thrown errors are replayed", async () => {
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
 
   const mockedCB = jest.fn();
@@ -284,7 +280,7 @@ test("thrown errors are replayed", async () => {
     });
   }).toThrowError("foo");
 
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
   process.env.SLAPSHOT_ONLINE = "false";
   expect(() => {
     memorize("error", mockedCB);
@@ -294,7 +290,7 @@ test("thrown errors are replayed", async () => {
 });
 
 test("thrown errors are replayed with custom properties", async () => {
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
 
   class CustomError extends Error {
@@ -312,7 +308,7 @@ test("thrown errors are replayed with custom properties", async () => {
     });
   }).toThrowError("foo");
 
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
   process.env.SLAPSHOT_ONLINE = "false";
   expect(() => {
     memorize("error", mockedCB);
@@ -328,13 +324,13 @@ test("thrown errors are replayed with custom properties", async () => {
 });
 
 test("consoles error of non-matching snap when validateSnapshot is not set", async () => {
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
   const spy = jest.spyOn(console, "warn");
 
   memorize("c", () => 22);
 
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
   process.env.SLAPSHOT_ONLINE = "true";
 
   memorize("c", () => {});
@@ -344,12 +340,12 @@ test("consoles error of non-matching snap when validateSnapshot is not set", asy
 });
 
 test("throws error of non-matching snap when validateSnapshot is set to true", async () => {
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
 
   memorize("validateSnapshot", () => 22);
 
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
   process.env.SLAPSHOT_ONLINE = "true";
   expect(() => {
     memorize("validateSnapshot", () => {}, {
@@ -359,17 +355,33 @@ test("throws error of non-matching snap when validateSnapshot is set to true", a
 });
 
 test("deffers to validateSnapshot to validate snapshot when validateSnapshot is a funtion", async () => {
-  process.argv.push("--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
   process.env.SLAPSHOT_ONLINE = "true";
 
   memorize("c", () => 22);
 
-  process.argv = process.argv.filter(e => e !== "--updateSnapshot");
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
+  process.env.SLAPSHOT_ONLINE = "false";
+  const data = memorize("c", () => {}, {
+    validateSnapshot: liveData => {
+      expect(liveData).toMatchSnapshot("some dumb snapshot");
+    }
+  });
+  expect(data).toBe(22);
+});
+
+test("does not break toMatchSnapshot", async () => {
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "true";
+  process.env.SLAPSHOT_ONLINE = "true";
+
+  memorize("c", () => 22);
+
+  process.env.SHOULD_UPDATE_SNAPSHOTS = "false";
   process.env.SLAPSHOT_ONLINE = "false";
   const data = memorize("c", () => {}, {
     validateSnapshot: liveData => {
       expect(liveData).toMatchSnapshot();
     }
   });
-  expect(data).toBe(22);
+  expect(data).toMatchSnapshot("some dumb snapshot");
 });

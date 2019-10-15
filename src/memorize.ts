@@ -1,9 +1,6 @@
-import fs from "fs";
 import { Snapshot, SlapshotDataFormat } from "./types";
-import { runInOnlineMode, shouldUpdateSnapshot } from "./utils";
+import { runInOnlineMode } from "./utils";
 import { safeSnapshot } from "./safeSnapshot";
-import { loadSnaps } from "./loadSnaps";
-import { mkdir } from "./mkdir";
 // @ts-ignore
 import errorToJSON from "utils-error-to-json";
 // @ts-ignore
@@ -30,15 +27,17 @@ export function memorize<ReturnedData = any>(
   }: { pure?: boolean; validateSnapshot?: ValidationOptions } = {}
 ): Promise<ReturnedData> | ReturnedData {
   const testData = getFromJestContext(snapshotName, pure);
-  let snapshots: Snapshot = {};
 
-  if (fs.existsSync(testData.slapFilePath)) {
-    snapshots = loadSnaps(testData.slapFilePath);
+  let snapshot;
+
+  try {
+    snapshot = JSON.parse(testData.snapshotData[testData.fullSnapshotName]);
+  } catch (_e) {
+    snapshot = testData.snapshotData[testData.fullSnapshotName];
   }
-  const snapshot = snapshots[testData.fullSnapshotName];
-  const snap = snapshot || ({} as Snapshot);
 
-  if (!shouldUpdateSnapshot() && !runInOnlineMode() && !snapshot) {
+  const snap = snapshot || ({} as Snapshot);
+  if (!testData.shouldUpdateSnapshot && !runInOnlineMode() && !snapshot) {
     throw new Error(
       `Missing snapshot
     - Method snapshot name: ${testData.fullSnapshotName}
@@ -46,7 +45,7 @@ export function memorize<ReturnedData = any>(
     - Test file: ${testData.testFilePath}
 
     ${process.env.SLAPSHOT_RERUN_MESSAGE ||
-      "Please re-run Jest with the --updateSnapshot flag AND the env var SLAPSHOT_ONLINE=true"}.`.replace(
+      "Please re-run Jest with the env var SLAPSHOT_ONLINE=true"}.`.replace(
         new RegExp("        ", "g"),
         ""
       )
@@ -68,50 +67,46 @@ export function memorize<ReturnedData = any>(
     return Promise.resolve(methodResults.results)
       .catch(error => {
         return resolveData(
-          testData.slapFilePath,
           snap,
           testData.fullSnapshotName,
           {
             thrownError: JSON.stringify(errorToJSON(error)),
             results: null
           },
-          testData.testFilePath,
+          testData,
           validateSnapshot
         );
       })
       .then(methodResults => {
         return resolveData(
-          testData.slapFilePath,
           snap,
           testData.fullSnapshotName,
           {
             results: methodResults
           },
-          testData.testFilePath,
+          testData,
           validateSnapshot
         );
       });
   }
 
   return resolveData(
-    testData.slapFilePath,
     snap,
     testData.fullSnapshotName,
     methodResults,
-    testData.testFilePath,
+    testData,
     validateSnapshot
   );
 }
 
 function resolveData(
-  snapFile: string,
   snap: any,
   fullSnapshotName: string,
   methodResults: SlapshotDataFormat,
-  testFilePath: string,
+  testData: ReturnType<typeof getFromJestContext>,
   validateSnapshot: ValidationOptions
 ) {
-  if (!shouldUpdateSnapshot() && runInOnlineMode()) {
+  if (!testData.shouldUpdateSnapshot && runInOnlineMode()) {
     let snapDataToCompare = snap;
 
     if (validateSnapshot && typeof validateSnapshot === "function") {
@@ -125,14 +120,14 @@ function resolveData(
       if (typeof methodResultsToCompare === "object") {
         methodResultsToCompare = JSON.stringify(methodResultsToCompare);
       }
-
+      console.log(methodResultsToCompare, snapDataToCompare);
       if (
         (snap.results || snap.thrownError) &&
         methodResultsToCompare !== snapDataToCompare
       ) {
         const defaultWarning = `[Warning] Integration test result does not match the memorized snap file:
         - Method snapshot name: ${fullSnapshotName}
-        - Test file: ${testFilePath
+        - Test file: ${testData.testFilePath
           .split(".")
           .slice(0, -1)
           .join(".")}
@@ -140,7 +135,7 @@ function resolveData(
         - Existing Snap: ${snapDataToCompare}
   
         ${process.env.SLAPSHOT_RERUN_MESSAGE ||
-          "Please re-run Jest with the --updateSnapshot flag AND the env var SLAPSHOT_ONLINE=true"}.`.replace(
+          "Please re-run Jest with the env var SLAPSHOT_ONLINE=true"}.`.replace(
           new RegExp("          ", "g"),
           ""
         );
@@ -156,15 +151,10 @@ function resolveData(
     return returnValues(methodResults);
   }
 
-  const newSnapData = `\nexports['${fullSnapshotName}'] = ${JSON.stringify(
-    safeSnapshot(methodResults),
-    null,
-    2
-  )}\n`;
+  testData.addSnapshot(
+    fullSnapshotName,
+    JSON.stringify(safeSnapshot(methodResults))
+  );
 
-  mkdir(snapFile);
-  fs.writeFileSync(snapFile, newSnapData, {
-    flag: "a"
-  });
   return returnValues(methodResults);
 }
