@@ -21,8 +21,8 @@ const complexReturn = (someValue: any = null) => {
 
 let mockPromise: any;
 let mockThunk: any;
-
 let mockedConsole: jest.SpyInstance;
+
 beforeEach(() => {
   process.env.SLAPSHOT_HACK_BYPASS_JEST_SHOULD_UPDATE_SNAPSHOTS_FOR_TESTS = undefined;
   process.env.SLAPSHOT_ONLINE = undefined;
@@ -105,7 +105,6 @@ test("calls run but dont update with SLAPSHOT_ONLINE", async () => {
   expect(mockWithValue.mock.calls.length).toBe(2);
   expect(mockWithValue.mock.calls.length).toBe(2);
   expect(data2.foo).toBe("bar");
-  expect(mockedConsole).not.toBeCalled();
 });
 
 test("calls run still in unit tests with just updateSnapshot", async () => {
@@ -119,9 +118,8 @@ test("calls run still in unit tests with just updateSnapshot", async () => {
   process.env.SLAPSHOT_ONLINE = "false";
   const data: any = await memorize("d", mockThunk);
   expect(mockThunk.mock.calls.length).toBe(1);
-  expect(mockThunk.mock.calls.length).toBe(1);
   expect(data.foo).toBe("bar");
-  expect(mockedConsole).not.toBeCalled();
+  expect(mockedConsole).toBeCalled();
 });
 
 test("calls run and update with updateSnapshot and SLAPSHOT_ONLINE", async () => {

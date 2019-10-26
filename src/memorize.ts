@@ -40,7 +40,7 @@ export function memorize<ReturnedData = any>(
   if (!testData.shouldUpdateSnapshot && !runInOnlineMode() && !snapshot) {
     throw new Error(
       `Missing snapshot
-    - Method snapshot name: ${testData.fullSnapshotName}
+    - Snapshot name: ${testData.fullSnapshotName}
     - In snapshot file: ${testData.testFileName}
     - Test file: ${testData.testFilePath}
 
@@ -119,7 +119,9 @@ function resolveData(
 
       let methodResultsToCompare: any = methodResults;
       if (typeof methodResultsToCompare === "object") {
-        methodResultsToCompare = JSON.stringify(methodResultsToCompare);
+        methodResultsToCompare = JSON.stringify(
+          safeSnapshot(methodResultsToCompare)
+        );
       }
 
       if (
@@ -127,7 +129,7 @@ function resolveData(
         methodResultsToCompare !== snapDataToCompare
       ) {
         const defaultWarning = `[Warning] Integration test result does not match the memorized snap file:
-        - Method snapshot name: ${fullSnapshotName}
+        - Snapshot name: ${fullSnapshotName}
         - Test file: ${testData.testFilePath
           .split(".")
           .slice(0, -1)
