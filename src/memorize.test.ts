@@ -22,12 +22,18 @@ const complexReturn = (someValue: any = null) => {
 let mockPromise: any;
 let mockThunk: any;
 
+let mockedConsole: jest.SpyInstance;
 beforeEach(() => {
   process.env.SLAPSHOT_HACK_BYPASS_JEST_SHOULD_UPDATE_SNAPSHOTS_FOR_TESTS = undefined;
   process.env.SLAPSHOT_ONLINE = undefined;
 
   mockPromise = jest.fn(fetchData);
   mockThunk = jest.fn(mockPromise);
+  mockedConsole = jest.spyOn(console, "warn");
+});
+
+afterEach(() => {
+  mockedConsole.mockRestore();
 });
 
 test("calls thunk on first run", async () => {
@@ -38,6 +44,7 @@ test("calls thunk on first run", async () => {
   expect(mockPromise.mock.calls.length).toBe(1);
   expect(mockThunk.mock.calls.length).toBe(1);
   expect(data.foo).toBe("bar");
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("writes a __snapshot__ file to disk", async () => {
@@ -46,6 +53,7 @@ test("writes a __snapshot__ file to disk", async () => {
   process.env.SLAPSHOT_ONLINE = "true";
 
   await memorize("b", mockThunk);
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("resolves from disk on 2nd hit", async () => {
@@ -69,6 +77,7 @@ test("resolves from disk on 2nd hit", async () => {
   expect(mockPromise.mock.calls.length).toBe(1);
   expect(mockThunk.mock.calls.length).toBe(1);
   expect(data.foo).toBe("bar");
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("calls run but dont update with SLAPSHOT_ONLINE", async () => {
@@ -96,6 +105,7 @@ test("calls run but dont update with SLAPSHOT_ONLINE", async () => {
   expect(mockWithValue.mock.calls.length).toBe(2);
   expect(mockWithValue.mock.calls.length).toBe(2);
   expect(data2.foo).toBe("bar");
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("calls run still in unit tests with just updateSnapshot", async () => {
@@ -111,6 +121,7 @@ test("calls run still in unit tests with just updateSnapshot", async () => {
   expect(mockThunk.mock.calls.length).toBe(1);
   expect(mockThunk.mock.calls.length).toBe(1);
   expect(data.foo).toBe("bar");
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("calls run and update with updateSnapshot and SLAPSHOT_ONLINE", async () => {
@@ -136,6 +147,7 @@ test("calls run and update with updateSnapshot and SLAPSHOT_ONLINE", async () =>
   expect(mockWithValue.mock.calls.length).toBe(2);
   expect(mockWithValue.mock.calls.length).toBe(2);
   expect(data2.foo).toBe("foo");
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("works with strings and numbers", async () => {
@@ -164,6 +176,7 @@ test("works with null value", async () => {
   process.env.SLAPSHOT_ONLINE = "false";
   const data = memorize("c", () => {});
   expect(data).toBe(null);
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("works with JSON string in memorize name", async () => {
@@ -190,6 +203,7 @@ test("works with JSON string in memorize name", async () => {
   expect(mockPromise.mock.calls.length).toBe(1);
   expect(mockThunk.mock.calls.length).toBe(1);
   expect(data.foo).toBe("bar");
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("works with undefined value", async () => {
@@ -204,6 +218,7 @@ test("works with undefined value", async () => {
   process.env.SLAPSHOT_ONLINE = "false";
   const data = memorize("c", () => {});
   expect(data).toBeUndefined();
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("works with array value", async () => {
@@ -218,6 +233,7 @@ test("works with array value", async () => {
   process.env.SLAPSHOT_ONLINE = "false";
   const data = memorize("c", () => {});
   expect(data).toEqual([1, 2, 3]);
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("nested APIs with functions throw an error when called unless mocked manualy", async () => {
@@ -237,6 +253,7 @@ test("nested APIs with functions throw an error when called unless mocked manual
   expect(() => {
     data.method();
   }).toThrow();
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("Impure memorized methods also add call count to name", async () => {
@@ -258,6 +275,7 @@ test("Impure memorized methods also add call count to name", async () => {
 
   expect(result1).toBe(22);
   expect(result2).toBe(21);
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("No race conditions - works many times out of sync", async () => {
@@ -289,6 +307,7 @@ test("No race conditions - works many times out of sync", async () => {
     i = i + 1;
     await memorize(`c - ${i}`, asyncEvent);
   }
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("thrown errors are replayed", async () => {
@@ -311,6 +330,7 @@ test("thrown errors are replayed", async () => {
   }).toThrowError("foo");
 
   expect(mockedCB).not.toBeCalled();
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("thrown errors are replayed with custom properties", async () => {
@@ -347,13 +367,13 @@ test("thrown errors are replayed with custom properties", async () => {
   }
 
   expect(mockedCB).not.toBeCalled();
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("consoles error of non-matching snap when validateSnapshot is not set", async () => {
   process.env.SLAPSHOT_HACK_BYPASS_JEST_SHOULD_UPDATE_SNAPSHOTS_FOR_TESTS =
     "true";
   process.env.SLAPSHOT_ONLINE = "true";
-  const spy = jest.spyOn(console, "warn");
 
   memorize("c", () => 22);
 
@@ -363,8 +383,7 @@ test("consoles error of non-matching snap when validateSnapshot is not set", asy
 
   memorize("c", () => {});
 
-  expect(spy).toBeCalled();
-  spy.mockRestore();
+  expect(mockedConsole).toBeCalled();
 });
 
 test("throws error of non-matching snap when validateSnapshot is set to true", async () => {
@@ -382,6 +401,7 @@ test("throws error of non-matching snap when validateSnapshot is set to true", a
       validateSnapshot: true
     });
   }).toThrow();
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("deffers to validateSnapshot to validate snapshot when validateSnapshot is a funtion", async () => {
@@ -400,6 +420,7 @@ test("deffers to validateSnapshot to validate snapshot when validateSnapshot is 
     }
   });
   expect(data).toBe(22);
+  expect(mockedConsole).not.toBeCalled();
 });
 
 test("does not break toMatchSnapshot", async () => {
@@ -418,4 +439,5 @@ test("does not break toMatchSnapshot", async () => {
     }
   });
   expect(data).toMatchSnapshot("some dumb snapshot");
+  expect(mockedConsole).not.toBeCalled();
 });
