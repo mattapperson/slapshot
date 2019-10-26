@@ -7,7 +7,7 @@ export const getFromJestContext = (snapshotName: string, pure: boolean) => {
   // @ts-ignore
   expect().__slapshot__hack__context(context => (jestContext = context));
 
-  let fullSnapshotName = `${jestContext.currentTestName} - ${snapshotName}`;
+  let fullSnapshotName = `Test: ${jestContext.currentTestName} | Memorized Name: ${snapshotName}`;
 
   if (!pure) {
     if (!testMap[jestContext.currentTestName]) {
@@ -15,11 +15,11 @@ export const getFromJestContext = (snapshotName: string, pure: boolean) => {
     }
     testMap[jestContext.currentTestName] += 1;
 
-    fullSnapshotName = `${fullSnapshotName} -- ${
+    fullSnapshotName = `${fullSnapshotName} | Call iteration: ${
       testMap[jestContext.currentTestName]
     }`;
   } else {
-    fullSnapshotName = `${fullSnapshotName} -- 0`;
+    fullSnapshotName = `${fullSnapshotName} | Call iteration: 0`;
   }
   const testFilePath = jestContext.testPath
     .split(".")
@@ -39,9 +39,12 @@ export const getFromJestContext = (snapshotName: string, pure: boolean) => {
     testFilePath,
     fullSnapshotName,
     shouldUpdateSnapshot:
-      (process.env.SHOULD_UPDATE_SNAPSHOTS === undefined &&
+      (process.env
+        .SLAPSHOT_HACK_BYPASS_JEST_SHOULD_UPDATE_SNAPSHOTS_FOR_TESTS ===
+        undefined &&
         jestContext.shouldUpdateSnapshot) ||
-      process.env.SHOULD_UPDATE_SNAPSHOTS === "true",
+      process.env
+        .SLAPSHOT_HACK_BYPASS_JEST_SHOULD_UPDATE_SNAPSHOTS_FOR_TESTS === "true",
     snapshotData: jestContext.snapshotData,
     addSnapshot: jestContext.addSnapshot as (
       testName: string,
