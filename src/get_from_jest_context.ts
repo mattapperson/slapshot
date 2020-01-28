@@ -1,4 +1,5 @@
 import path from "path";
+
 const testMap: any = {};
 
 export const getFromJestContext = (snapshotName: string, pure: boolean) => {
@@ -33,12 +34,20 @@ export const getFromJestContext = (snapshotName: string, pure: boolean) => {
         testFileName
     );
 
+    let snapshot;
+    try {
+        snapshot = JSON.parse(jestContext.snapshotData[fullSnapshotName]);
+    } catch (_e) {
+        snapshot = jestContext.snapshotData[fullSnapshotName];
+    }
+
     return {
+        snapshot,
         slapFilePath,
         testFileName,
         testFilePath,
         fullSnapshotName,
-        shouldUpdateSnapshot:
+        shouldForceUpdateSnapshot:
             (process.env
                 .SLAPSHOT_HACK_BYPASS_JEST_SHOULD_UPDATE_SNAPSHOTS_FOR_TESTS ===
                 undefined &&

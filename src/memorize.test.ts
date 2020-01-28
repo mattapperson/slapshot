@@ -58,6 +58,16 @@ test("writes a __snapshot__ file to disk", async () => {
     expect(mockedConsole).not.toBeCalled();
 });
 
+test("throws an error is offline, and no snapshot recorded", () => {
+    process.env.SLAPSHOT_HACK_BYPASS_JEST_SHOULD_UPDATE_SNAPSHOTS_FOR_TESTS =
+        "false";
+    process.env.SLAPSHOT_ONLINE = "false";
+
+    expect(() => {
+        memorize("no snapshot", () => 22);
+    }).toThrow();
+});
+
 test("resolves from disk on 2nd hit", async () => {
     process.env.SLAPSHOT_HACK_BYPASS_JEST_SHOULD_UPDATE_SNAPSHOTS_FOR_TESTS =
         "true";

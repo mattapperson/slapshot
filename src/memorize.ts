@@ -3,50 +3,34 @@ import hydrateError from "utils-error-reviver";
 // @ts-ignore
 import errorToJSON from "utils-error-to-json";
 import { getFromJestContext } from "./get_from_jest_context";
+import { MissingSnapshotError } from "./mising_snapshot_error";
+import { MismatchSnapshotError } from "./mising_snapshot_error copy";
 import { safeSnapshot } from "./safeSnapshot";
-import { SlapshotDataFormat, Snapshot } from "./types";
+import {
+    MemorizeOptions,
+    SlapshotDataFormat,
+    ValidationOptions
+} from "./types";
 import { runInOnlineMode } from "./utils";
-
-type ValidationCallback = (liveData: any, snapshottedData: any) => void;
-type ValidationOptions = boolean | ValidationCallback;
 
 export function memorize<ReturnedData = any>(
     snapshotName: string,
-    method: () => Promise<ReturnedData> | ReturnedData,
-    {
-        pure = true,
-        validateSnapshot = false
-    }: { pure?: boolean; validateSnapshot?: ValidationOptions } = {}
+    fnToSnapshot: () => Promise<ReturnedData> | ReturnedData,
+    { pure = true, validateSnapshot = false }: MemorizeOptions = {}
 ): Promise<ReturnedData> | ReturnedData {
-    const testData = getFromJestContext(snapshotName, pure);
+    const jestData = getFromJestContext(snapshotName, pure);
 
-    let snapshot;
-
-    try {
-        snapshot = JSON.parse(testData.snapshotData[testData.fullSnapshotName]);
-    } catch (_e) {
-        snapshot = testData.snapshotData[testData.fullSnapshotName];
-    }
-
-    const snap = snapshot || ({} as Snapshot);
-    if (!testData.shouldUpdateSnapshot && !runInOnlineMode() && !snapshot) {
-        throw new Error(
-            `Missing snapshot
-    - Snapshot name: ${testData.fullSnapshotName}
-    - In snapshot file: ${testData.testFileName}
-    - Test file: ${testData.testFilePath}
-
-    ${process.env.SLAPSHOT_RERUN_MESSAGE ||
-        "Please re-run Jest with the env var SLAPSHOT_ONLINE=true"}.`.replace(
-                new RegExp("        ", "g"),
-                ""
-            )
-        );
+    if (
+        !jestData.shouldForceUpdateSnapshot &&
+        !runInOnlineMode() &&
+        !jestData.snapshot
+    ) {
+        throw new MissingSnapshotError(jestData);
     }
 
     if (!runInOnlineMode()) {
-        testData.markSnapAsUsed(testData.fullSnapshotName);
-        return returnValues(safeSnapshot(snap, false));
+        jestData.markSnapAsUsed(jestData.fullSnapshotName);
+        return returnValues(safeSnapshot(jestData.snapshot, false));
     }
 
     let methodResults: SlapshotDataFormat = {
@@ -54,7 +38,7 @@ export function memorize<ReturnedData = any>(
         thrownError: null
     };
     try {
-        methodResults.results = method();
+        methodResults.results = fnToSnapshot();
     } catch (e) {
         methodResults.thrownError = JSON.stringify(errorToJSON(e));
     }
@@ -63,97 +47,75 @@ export function memorize<ReturnedData = any>(
         return Promise.resolve(methodResults.results)
             .catch(error => {
                 return resolveData(
-                    snap,
-                    testData.fullSnapshotName,
                     {
                         thrownError: JSON.stringify(errorToJSON(error)),
                         results: null
                     },
-                    testData,
+                    jestData,
                     validateSnapshot
                 );
             })
             .then(methodResults => {
                 return resolveData(
-                    snap,
-                    testData.fullSnapshotName,
                     {
                         results: methodResults
                     },
-                    testData,
+                    jestData,
                     validateSnapshot
                 );
             });
     }
 
-    return resolveData(
-        snap,
-        testData.fullSnapshotName,
-        methodResults,
-        testData,
-        validateSnapshot
-    );
+    return resolveData(methodResults, jestData, validateSnapshot);
 }
 
 function resolveData(
-    snap: any,
-    fullSnapshotName: string,
     methodResults: SlapshotDataFormat,
-    testData: ReturnType<typeof getFromJestContext>,
+    jestData: ReturnType<typeof getFromJestContext>,
     validateSnapshot: ValidationOptions
 ) {
-    if (!testData.shouldUpdateSnapshot && runInOnlineMode()) {
-        let snapDataToCompare = snap;
-
+    let methodResultsStringified;
+    if (!jestData.shouldForceUpdateSnapshot && runInOnlineMode()) {
         if (validateSnapshot && typeof validateSnapshot === "function") {
-            validateSnapshot(methodResults, snapDataToCompare);
+            validateSnapshot(methodResults, jestData.snapshot);
         } else {
-            if (typeof snapDataToCompare === "object") {
-                snapDataToCompare = JSON.stringify(snapDataToCompare);
+            let snapAsString = jestData.snapshot;
+            if (typeof jestData.snapshot === "object") {
+                snapAsString = JSON.stringify(jestData.snapshot);
             }
 
-            let methodResultsToCompare: any = methodResults;
-            if (typeof methodResultsToCompare === "object") {
-                methodResultsToCompare = JSON.stringify(
-                    safeSnapshot(methodResultsToCompare)
+            if (typeof methodResults === "object") {
+                methodResultsStringified = JSON.stringify(
+                    safeSnapshot(methodResults)
                 );
             }
 
             if (
-                (snap.results || snap.thrownError) &&
-                methodResultsToCompare !== snapDataToCompare
+                jestData.snapshot &&
+                (jestData.snapshot.results || jestData.snapshot.thrownError) &&
+                methodResultsStringified !== snapAsString
             ) {
-                const defaultWarning = `[Warning] Integration test result does not match the memorized snap file:
-        - Snapshot name: ${fullSnapshotName}
-        - Test file: ${testData.testFilePath
-            .split(".")
-            .slice(0, -1)
-            .join(".")}
-        - Live result: ${methodResultsToCompare}
-        - Existing Snap: ${snapDataToCompare}
-  
-        ${process.env.SLAPSHOT_RERUN_MESSAGE ||
-            "Please re-run Jest with the env var SLAPSHOT_ONLINE=true"}.`.replace(
-                    new RegExp("          ", "g"),
-                    ""
+                const warning = new MismatchSnapshotError(
+                    jestData,
+                    methodResultsStringified
                 );
 
                 if (!validateSnapshot) {
-                    console.warn(defaultWarning);
+                    console.warn(warning.message);
                 } else if (typeof validateSnapshot === "boolean") {
-                    throw new Error(defaultWarning);
+                    throw warning;
                 }
             }
         }
-        testData.markSnapAsUsed(testData.fullSnapshotName);
+        jestData.markSnapAsUsed(jestData.fullSnapshotName);
         return returnValues(methodResults);
     }
 
-    testData.addSnapshot(
-        fullSnapshotName,
-        JSON.stringify(safeSnapshot(methodResults))
+    jestData.addSnapshot(
+        jestData.fullSnapshotName,
+        methodResultsStringified || JSON.stringify(safeSnapshot(methodResults))
     );
-    testData.markSnapAsUsed(testData.fullSnapshotName);
+    jestData.markSnapAsUsed(jestData.fullSnapshotName);
     return returnValues(methodResults);
 }
 
