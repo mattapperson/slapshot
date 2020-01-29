@@ -20,15 +20,9 @@ export function memorize<ReturnedData = any>(
 ): Promise<ReturnedData> | ReturnedData {
     const jestData = getFromJestContext(snapshotName, pure);
 
-    if (
-        !jestData.shouldForceUpdateSnapshot &&
-        !runInOnlineMode() &&
-        !jestData.snapshot
-    ) {
+    if (!runInOnlineMode() && !jestData.snapshot) {
         throw new MissingSnapshotError(jestData);
-    }
-
-    if (!runInOnlineMode()) {
+    } else if (!runInOnlineMode()) {
         jestData.markSnapAsUsed(jestData.fullSnapshotName);
         return returnValues(safeSnapshot(jestData.snapshot, false));
     }

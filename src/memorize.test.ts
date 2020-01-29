@@ -1,7 +1,7 @@
 /* eslint-env jest */
 import { performance } from "perf_hooks";
 import "./hack_context";
-import { memorize } from "./memorize";
+import { memorize } from "./index";
 
 const fetchData = () => {
     return new Promise(resolve => {
