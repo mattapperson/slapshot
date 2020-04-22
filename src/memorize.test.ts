@@ -4,7 +4,7 @@ import "./hack_context";
 import { memorize } from "./index";
 
 const fetchData = () => {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
         setTimeout(() => {
             resolve({ foo: "bar" });
         }, 200);
@@ -12,7 +12,7 @@ const fetchData = () => {
 };
 
 const complexReturn = (someValue: any = null) => {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
         setTimeout(() => {
             resolve(
                 someValue || { foo: "bar", method: () => ({ here: "now" }) }
@@ -42,7 +42,9 @@ test("calls thunk on first run", async () => {
     process.env.SLAPSHOT_HACK_BYPASS_JEST_SHOULD_UPDATE_SNAPSHOTS_FOR_TESTS =
         "true";
     process.env.SLAPSHOT_ONLINE = "true";
+
     const data = await memorize("a", mockThunk);
+
     expect(mockPromise.mock.calls.length).toBe(1);
     expect(mockThunk.mock.calls.length).toBe(1);
     expect(data.foo).toBe("bar");
@@ -294,7 +296,7 @@ test("No race conditions - works many times out of sync", async () => {
     process.env.SLAPSHOT_ONLINE = "true";
 
     const asyncEvent = async () => {
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
             setTimeout(() => {
                 resolve(22);
             }, 5);
@@ -408,7 +410,7 @@ test("throws error of non-matching snap when validateSnapshot is set to true", a
     process.env.SLAPSHOT_ONLINE = "true";
     expect(() => {
         memorize("validateSnapshot", () => {}, {
-            validateSnapshot: true
+            validateSnapshot: true,
         });
     }).toThrow();
     expect(mockedConsole).not.toBeCalled();
@@ -425,12 +427,93 @@ test("deffers to validateSnapshot to validate snapshot when validateSnapshot is 
         "false";
     process.env.SLAPSHOT_ONLINE = "false";
     const data = memorize("c", () => {}, {
-        validateSnapshot: liveData => {
+        validateSnapshot: (liveData) => {
             expect(liveData).toMatchSnapshot("some dumb snapshot");
-        }
+        },
     });
     expect(data).toBe(22);
     expect(mockedConsole).not.toBeCalled();
+});
+
+test("Validate snapshot when validateSnapshot is an object using ignore", async () => {
+    process.env.SLAPSHOT_HACK_BYPASS_JEST_SHOULD_UPDATE_SNAPSHOTS_FOR_TESTS =
+        "true";
+    process.env.SLAPSHOT_ONLINE = "true";
+
+    memorize("c", () => ({
+        id: "kh4lk23h4lk2h34klh2kl3h4",
+        name: "foo",
+    }));
+
+    const data = memorize<any>(
+        "c",
+        () => ({
+            id: "32jl4h2kj3h4klj23h4",
+            name: "foo",
+        }),
+        {
+            validateSnapshot: {
+                ignore: ["id"],
+            },
+        }
+    );
+
+    expect(data.id).toBe("32jl4h2kj3h4klj23h4");
+    expect(mockedConsole).not.toBeCalled();
+});
+
+test("Validate on snapshot when validateSnapshot is an object using check on id", async () => {
+    process.env.SLAPSHOT_HACK_BYPASS_JEST_SHOULD_UPDATE_SNAPSHOTS_FOR_TESTS =
+        "true";
+    process.env.SLAPSHOT_ONLINE = "true";
+
+    memorize("c", () => ({
+        id: "kh4lk23h4lk2h34klh2kl3h4",
+        name: "foo",
+    }));
+
+    const data = memorize<any>(
+        "c",
+        () => ({
+            id: "32jl4h2kj3h4klj23h4",
+            name: "foo",
+        }),
+        {
+            validateSnapshot: {
+                check: ["name"],
+            },
+        }
+    );
+
+    expect(data.id).toBe("32jl4h2kj3h4klj23h4");
+    expect(mockedConsole).not.toBeCalled();
+});
+
+test("Validate fails on snapshot when validateSnapshot is an object using check on id", async () => {
+    process.env.SLAPSHOT_HACK_BYPASS_JEST_SHOULD_UPDATE_SNAPSHOTS_FOR_TESTS =
+        "false";
+    process.env.SLAPSHOT_ONLINE = "true";
+
+    memorize("c", () => ({
+        id: "kh4lk23h4lk2h34klh2kl3h4",
+        name: "foo",
+    }));
+
+    const data = memorize<any>(
+        "c",
+        () => ({
+            id: "32jl4h2kj3h4klj23h4",
+            name: "foo",
+        }),
+        {
+            validateSnapshot: {
+                check: ["id"],
+            },
+        }
+    );
+
+    expect(data.id).toBe("32jl4h2kj3h4klj23h4");
+    expect(mockedConsole).toBeCalled();
 });
 
 test("does not break toMatchSnapshot", async () => {
@@ -444,9 +527,9 @@ test("does not break toMatchSnapshot", async () => {
         "false";
     process.env.SLAPSHOT_ONLINE = "false";
     const data = memorize("c", () => {}, {
-        validateSnapshot: liveData => {
+        validateSnapshot: (liveData) => {
             expect(liveData).toMatchSnapshot();
-        }
+        },
     });
     expect(data).toMatchSnapshot("some dumb snapshot");
     expect(mockedConsole).not.toBeCalled();

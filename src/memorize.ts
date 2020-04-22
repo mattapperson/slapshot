@@ -9,9 +9,9 @@ import { safeSnapshot } from "./safeSnapshot";
 import {
     MemorizeOptions,
     SlapshotDataFormat,
-    ValidationOptions
+    ValidationOptions,
 } from "./types";
-import { runInOnlineMode } from "./utils";
+import { diff, get, runInOnlineMode } from "./utils";
 
 export function memorize<ReturnedData = any>(
     snapshotName: string,
@@ -29,7 +29,7 @@ export function memorize<ReturnedData = any>(
 
     let methodResults: SlapshotDataFormat = {
         results: null,
-        thrownError: null
+        thrownError: null,
     };
     try {
         methodResults.results = fnToSnapshot();
@@ -39,20 +39,20 @@ export function memorize<ReturnedData = any>(
 
     if (methodResults.results instanceof Promise) {
         return Promise.resolve(methodResults.results)
-            .catch(error => {
+            .catch((error) => {
                 return resolveData(
                     {
                         thrownError: JSON.stringify(errorToJSON(error)),
-                        results: null
+                        results: null,
                     },
                     jestData,
                     validateSnapshot
                 );
             })
-            .then(methodResults => {
+            .then((methodResults) => {
                 return resolveData(
                     {
-                        results: methodResults
+                        results: methodResults,
                     },
                     jestData,
                     validateSnapshot
@@ -70,10 +70,58 @@ function resolveData(
 ) {
     let methodResultsStringified;
     if (!jestData.shouldForceUpdateSnapshot && runInOnlineMode()) {
+        console.log(typeof validateSnapshot);
+
         if (validateSnapshot && typeof validateSnapshot === "function") {
             validateSnapshot(methodResults, jestData.snapshot);
         } else {
             let snapAsString = jestData.snapshot;
+
+            if (validateSnapshot && validateSnapshot instanceof Object) {
+                if (validateSnapshot.check && validateSnapshot.ignore) {
+                    throw new Error(
+                        "Invalid use of memorize. Use only ignore or check when configuring validateSnapshot"
+                    );
+                }
+
+                if (typeof methodResults !== "object") {
+                    throw new Error(
+                        `validateSnapshot object config requires the value returned by memorize to be an object, receved ${methodResults}`
+                    );
+                }
+
+                if (typeof jestData.snapshot !== "object") {
+                    throw new Error(
+                        `validateSnapshot object config requires the value returned by memorize snapshots to be an object, receved ${jestData.snapshot} in the existing snapshot`
+                    );
+                }
+
+                if (validateSnapshot.ignore) {
+                    const theDiffs = diff(jestData.snapshotData, methodResults);
+
+                    theDiffs.forEach((d) => {
+                        if (validateSnapshot.ignore?.includes(d)) {
+                            throw new MismatchSnapshotError(
+                                jestData,
+                                JSON.stringify(safeSnapshot(methodResults))
+                            );
+                        }
+                    });
+                } else {
+                    validateSnapshot.check?.forEach((key) => {
+                        if (
+                            get(jestData.snapshotData, key) !==
+                            get(methodResults, key)
+                        ) {
+                            throw new MismatchSnapshotError(
+                                jestData,
+                                JSON.stringify(safeSnapshot(methodResults))
+                            );
+                        }
+                    });
+                }
+            }
+
             if (typeof jestData.snapshot === "object") {
                 snapAsString = JSON.stringify(jestData.snapshot);
             }
