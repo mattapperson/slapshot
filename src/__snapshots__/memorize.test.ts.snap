@@ -22,12 +22,6 @@ exports[`Test: No race conditions - works many times out of sync | Memorized Nam
 
 exports[`Test: Validate fails on snapshot when validateSnapshot is an object using check on id | Memorized Name: c | Call iteration: 0`] = `{"results":{"id":"32jl4h2kj3h4klj23h4","name":"foo"},"thrownError":null}`;
 
-exports[`Test: Validate fils on snapshot when validateSnapshot is an object using check on id | Memorized Name: c | Call iteration: 0`] = `{"results":{"id":"32jl4h2kj3h4klj23h4","name":"foo"},"thrownError":null}`;
-
-exports[`Test: Validate fils on snapshot when validateSnapshot is an object using ignore | Memorized Name: c | Call iteration: 0`] = `{"results":{"id":"32jl4h2kj3h4klj23h4","name":"foo"},"thrownError":null}`;
-
-exports[`Test: Validate fils on snapshot when validateSnapshot is an object without using ignore | Memorized Name: c | Call iteration: 0`] = `{"results":{"id":"32jl4h2kj3h4klj23h4","name":"foo"},"thrownError":null}`;
-
 exports[`Test: Validate on snapshot when validateSnapshot is an object using check on id | Memorized Name: c | Call iteration: 0`] = `{"results":{"id":"32jl4h2kj3h4klj23h4","name":"foo"},"thrownError":null}`;
 
 exports[`Test: Validate snapshot when validateSnapshot is an object using ignore | Memorized Name: c | Call iteration: 0`] = `{"results":{"id":"32jl4h2kj3h4klj23h4","name":"foo"},"thrownError":null}`;
@@ -43,10 +37,6 @@ exports[`Test: calls thunk on first run | Memorized Name: a | Call iteration: 0`
 exports[`Test: consoles error of non-matching snap when validateSnapshot is not set | Memorized Name: c | Call iteration: 0`] = `{"results":22,"thrownError":null}`;
 
 exports[`Test: deffers to validateSnapshot to validate snapshot when validateSnapshot is a funtion | Memorized Name: c | Call iteration: 0`] = `{"results":22,"thrownError":null}`;
-
-exports[`Test: deffers to validateSnapshot to validate snapshot when validateSnapshot is an object | Memorized Name: c | Call iteration: 0`] = `{"results":22,"thrownError":null}`;
-
-exports[`Test: deffers to validateSnapshot to validate snapshot when validateSnapshot is an object using ignore | Memorized Name: c | Call iteration: 0`] = `{"results":{"id":"kh4lk23h4lk2h34klh2kl3h4","name":"foo"},"thrownError":null}`;
 
 exports[`Test: does not break toMatchSnapshot | Memorized Name: c | Call iteration: 0`] = `{"results":22,"thrownError":null}`;
 
