@@ -45,7 +45,7 @@
         "lib"
     ],
     "devDependencies": {
-        "@types/jest": "25.1.4",
+        "@types/jest": "26.0.23",
         "@types/node": "15.12.2",
         "jest": "24.8.0",
         "release-it": "12.3.2",
