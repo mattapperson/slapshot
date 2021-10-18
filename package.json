@@ -10,6 +10,10 @@
         "test": "jest",
         "release": "yarn test && release-it"
     },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/mattapperson/slapshot.git"
+    },
     "publishConfig": {
         "registry": "https://registry.npmjs.org/"
     },
